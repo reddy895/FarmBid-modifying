@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { QRCodeSVG } from 'qrcode.react'
@@ -482,28 +482,59 @@ const BlockchainEvent = ({ event }) => {
   )
 }
 
-// Admin KPI Card
-const KPICard = ({ title, value, icon: Icon, trend, trendUp }) => (
-  <Card>
-    <CardContent className="pt-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold mt-1">{value}</p>
-          {trend && (
-            <p className={`text-xs flex items-center mt-1 ${trendUp ? 'text-green-500' : 'text-red-500'}`}>
-              {trendUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-              {trend}
-            </p>
-          )}
+// Dynamic KPI Card with Real-Time Growth Engine
+const KPICard = ({ title, value, icon: Icon, trend: defaultTrend, trendUp: defaultTrendUp }) => {
+  const [prevValue, setPrevValue] = useState(value)
+  const [dynamicTrend, setDynamicTrend] = useState(defaultTrend)
+  const [isTrendUp, setIsTrendUp] = useState(defaultTrendUp)
+
+  // Calculate real-time percentage changes whenever the data value updates
+  useEffect(() => {
+    if (value === prevValue) return;
+    
+    // Extract base numbers from formatted strings (e.g. "₹2,500" -> 2500)
+    const strCurrent = String(value).replace(/[^0-9.-]+/g, "");
+    const strPrev = String(prevValue).replace(/[^0-9.-]+/g, "");
+    const numCurrent = parseFloat(strCurrent);
+    const numPrev = parseFloat(strPrev);
+    
+    // Only calculate if we have valid numbers AND strings weren't completely empty
+    if (!isNaN(numCurrent) && !isNaN(numPrev) && strCurrent && strPrev) {
+      if (numPrev === 0 && numCurrent > 0) {
+        setDynamicTrend('+100% just now')
+        setIsTrendUp(true)
+      } else if (numPrev > 0) {
+        const pctChange = ((numCurrent - numPrev) / numPrev) * 100
+        const formattedPct = Math.abs(pctChange).toFixed(1)
+        setIsTrendUp(pctChange >= 0)
+        setDynamicTrend(`${pctChange >= 0 ? '+' : '-'}${formattedPct}% from previous`)
+      }
+    }
+    setPrevValue(value)
+  }, [value, prevValue])
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold mt-1">{value}</p>
+            {(dynamicTrend || defaultTrend) && (
+              <p className={`text-xs flex items-center mt-1 ${isTrendUp ? 'text-green-500' : 'text-red-500'} animate-in fade-in slide-in-from-left-2 duration-500`}>
+                {isTrendUp ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
+                {dynamicTrend || defaultTrend}
+              </p>
+            )}
+          </div>
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Icon className="h-5 w-5 text-primary" />
+          </div>
         </div>
-        <div className="p-2 bg-primary/10 rounded-lg">
-          <Icon className="h-5 w-5 text-primary" />
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-)
+      </CardContent>
+    </Card>
+  )
+}
 
 // Bid Dialog
 const BidDialog = ({ listing, isOpen, onClose, onSubmit }) => {
@@ -554,7 +585,6 @@ const BidDialog = ({ listing, isOpen, onClose, onSubmit }) => {
   )
 }
 
-
 const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, userEmail }) => {
   const isMobile = useIsMobile()
   const [method, setMethod] = useState('razorpay')
@@ -576,6 +606,20 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
     { id: 'razorpay', name: 'Secure Razorpay Checkout', isImage: true, imgSrc: 'https://razorpay.com/assets/razorpay-logo.svg' },
   ]
 
+  // Auto-confirm when user returns from payment app
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && paymentPhase === 'processing' && !isVerifying) {
+        setTimeout(() => {
+          const btn = document.getElementById('auto-confirm-btn')
+          if (btn) btn.click()
+        }, 1500)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [paymentPhase, isVerifying])
+
   const generateUpiUri = (amount) => {
     // If the configured ID is actually a full payment link (like Razorpay.me), use it dynamically
     if (upiId && upiId.startsWith('http')) {
@@ -587,19 +631,16 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
     // Shorter transaction reference (some UPI apps have limits)
     const shortRef = txRef.slice(-12);
     const transactionNote = encodeURIComponent(`Deposit_${shortRef.slice(-4)}`);
-
     const params = [
-      `pa=${upiId}`,
-      `pn=${payeeName}`,
+      `pa=8618118952@axl`,
+      `pn=${encodeURIComponent('FarmBid')}`,
       `am=${formattedAmount}`,
       `tr=${shortRef}`,
       `cu=INR`,
-      `tn=${transactionNote}`
-    ].join('&');
-
-    // QR Codes strictly require the standard upi:// scheme and a transaction reference (tr)
-    return `upi://pay?${params}`;
-  };
+      `tn=${encodeURIComponent(`Deposit_${txRef.slice(-6)}`)}`
+    ].join('&')
+    return `upi://pay?${params}`
+  }
 
     // Advanced Sanitization for Razorpay (Targeting 10-digit Indian Mobile)
     const sanitizedPhone = useMemo(() => {
@@ -706,37 +747,50 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
   }
 
   const handlePayClick = () => {
-    if (isVerifying) return;
-    
-    // Cards and Razorpay use the official SDK portal for real payments
-    if (method === 'card' || method === 'razorpay') return handleRazorpay();
-    
-    // For PhonePe and Google Pay, we show the Scanner (QR Code)
-    const uri = generateUpiUri(amount, method);
-    setUpiUri(uri);
-    
+    if (isVerifying) return
+
+    if (method === 'razorpay' || method === 'card') {
+      handleRazorpay()
+      return
+    }
+
+    // PhonePe and Google Pay — show QR scanner
+    const uri = generateUpiUri(amount)
+    setUpiUri(uri)
+
     if (isMobile) {
-      window.location.href = uri;
-      setPaymentPhase('processing');
+      window.location.href = uri
+      setPaymentPhase('processing')
     } else {
-      setPaymentPhase('scanner');
+      setPaymentPhase('scanner')
     }
   }
 
   const handleReset = () => {
-    if (isVerifying) return;
-    setPaymentPhase('select');
-    setUpiUri('');
+    if (isVerifying) return
+    setPaymentPhase('select')
+    setUpiUri('')
   }
 
+  const hasPaid = useRef(false)
+
   const handleManualConfirm = async () => {
-    setIsVerifying(true);
-    // For demo purposes, we allow manual confirmation for Simulated UPI options
+    // Guard against double-firing (e.g. both visibilitychange + manual click)
+    if (isVerifying || hasPaid.current) return
+    hasPaid.current = true
+    setIsVerifying(true)
     try {
+<<<<<<< HEAD
       const token = localStorage.getItem('farmbid_token');
       const response = await fetch(`${API_URL}/wallet/topup`, {
         method: 'POST',
         headers: { 
+=======
+      const token = localStorage.getItem('farmbid_token') || localStorage.getItem('token')
+      const response = await fetch(`${API_URL}/wallet/topup`, {
+        method: 'POST',
+        headers: {
+>>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -745,17 +799,30 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
           paymentMethod: method,
           referenceId: txRef
         })
-      });
-      const data = await response.json();
+      })
+      const data = await response.json()
       if (data.success) {
+<<<<<<< HEAD
         setNewBalanceAfterPayment(data.newBalance);
         setPaymentPhase('success');
         onConfirm(data.newBalance);
+=======
+        onConfirm(data.newBalance)
+        setPaymentPhase('success')
+>>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
       } else {
-        toast.error('Failed to update wallet balance');
+        toast.error(data.error || 'Failed to update wallet balance')
+        hasPaid.current = false // Allow retry
       }
     } catch (e) {
+<<<<<<< HEAD
       toast.error('Connection error');
+=======
+      toast.error('Connection error. Please try again.')
+      hasPaid.current = false // Allow retry
+    } finally {
+      setIsVerifying(false)
+>>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
     }
   }
 
@@ -793,29 +860,34 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
   }, [isOpen, paymentPhase, userId, initialBalance]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(v) => !v && !isVerifying && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(v) => !v && !isVerifying && paymentPhase !== 'success' && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {isVerifying ? 'Secure Payment' : paymentPhase === 'scanner' ? 'Scan to Pay' : 'Add Funds to Wallet'}
+            {paymentPhase === 'success' ? 'Payment Complete ✓' : paymentPhase === 'scanner' ? 'Scan to Pay' : paymentPhase === 'processing' ? 'Processing Payment' : 'Add Funds to Wallet'}
           </DialogTitle>
           <DialogDescription>
-            {isVerifying 
-              ? 'Please wait while we confirm your transaction...' 
+            {paymentPhase === 'success'
+              ? 'Your wallet has been topped up successfully.'
               : paymentPhase === 'scanner'
-                ? `Scan this QR with any UPI app to pay ${formatINR(amount || 0)}`
-                : `Select a payment method to add ${formatINR(amount || 0)} to your wallet.`
-            }
+                ? `Scan with PhonePe or GPay to pay ${formatINR(amount || 0)}`
+                : paymentPhase === 'processing'
+                  ? 'Complete the payment in the app and return here.'
+                  : `Choose a payment method to add ${formatINR(amount || 0)} to your wallet.`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
           {paymentPhase === 'select' && (
+<<<<<<< HEAD
             <div className={`grid ${methods.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+=======
+            <div className="grid grid-cols-2 gap-3">
+>>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
               {methods.map((m) => (
-                <div 
-                  key={m.id} 
-                  className={`flex flex-col items-center justify-center p-4 border rounded-xl cursor-pointer transition-all ${method === m.id ? 'border-primary bg-primary/10 ring-2 ring-primary/20' : 'hover:bg-muted'}`} 
+                <div
+                  key={m.id}
+                  className={`flex flex-col items-center justify-center p-4 border rounded-xl cursor-pointer transition-all ${method === m.id ? 'border-primary bg-primary/10 ring-2 ring-primary/20' : 'hover:bg-muted'}`}
                   onClick={() => setMethod(m.id)}
                 >
                   <div className="h-10 flex items-center justify-center mb-2 text-primary">
@@ -830,17 +902,19 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
           {paymentPhase === 'scanner' && (
             <div className="flex flex-col items-center justify-center space-y-4 py-4">
               <div className="bg-white p-4 rounded-xl shadow-lg border-2 border-primary/20">
-                <QRCodeSVG value={upiUri} size={256} level="H" includeMargin={true} />
+                <QRCodeSVG value={upiUri} size={220} level="H" includeMargin={true} />
               </div>
-              <div className="flex flex-col items-center gap-2">
+              <div className="text-center space-y-1">
                 <Badge variant="outline" className="animate-pulse">
                   <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                  Waiting for payment...
+                  Waiting for scan...
                 </Badge>
+                <p className="text-xs text-muted-foreground">Open PhonePe or Google Pay and scan</p>
               </div>
             </div>
           )}
 
+<<<<<<< HEAD
           {paymentPhase === 'success' && (
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
@@ -859,28 +933,73 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
                 </div>
               </div>
             </motion.div>
+=======
+          {paymentPhase === 'processing' && (
+            <div className="flex flex-col items-center justify-center space-y-4 py-8">
+              <div className="relative">
+                <RefreshCw className="h-14 w-14 text-primary animate-spin" />
+              </div>
+              <div className="text-center">
+                <p className="font-semibold">Waiting for payment confirmation...</p>
+                <p className="text-sm text-muted-foreground mt-1">Once you complete payment, your balance will update automatically.</p>
+              </div>
+              {/* Hidden auto-confirm trigger */}
+              <button id="auto-confirm-btn" onClick={handleManualConfirm} className="hidden" />
+            </div>
+>>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
+          )}
+
+          {paymentPhase === 'success' && (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex flex-col items-center justify-center space-y-5 py-6"
+            >
+              <div className="h-20 w-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center shadow-lg">
+                <Check className="h-10 w-10" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-green-600 mb-1">Payment Done!</h3>
+                <p className="text-muted-foreground text-sm">
+                  <span className="font-bold text-foreground text-lg">{formatINR(amount)}</span> has been added to your wallet.
+                </p>
+              </div>
+            </motion.div>
           )}
         </div>
 
         <DialogFooter className="sm:justify-between gap-3">
           {paymentPhase === 'success' ? (
+<<<<<<< HEAD
             <Button className="w-full" onClick={onClose}>
+=======
+            <Button onClick={onClose} className="w-full bg-green-600 hover:bg-green-700 text-white gap-2">
+              <Check className="h-4 w-4" />
+>>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
               Back to Dashboard
             </Button>
           ) : paymentPhase === 'scanner' ? (
             <>
               <Button variant="ghost" onClick={handleReset} disabled={isVerifying}>Back</Button>
               <Button onClick={handleManualConfirm} disabled={isVerifying} className="gap-2">
-                <Check className="h-4 w-4" />
-                I have paid
+                {isVerifying ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                {isVerifying ? 'Processing...' : 'I Have Paid'}
+              </Button>
+            </>
+          ) : paymentPhase === 'processing' ? (
+            <>
+              <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+              <Button onClick={handleManualConfirm} disabled={isVerifying} className="flex-1 gap-2">
+                {isVerifying ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                {isVerifying ? 'Processing...' : 'I Have Paid'}
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={onClose} disabled={isVerifying} className="flex-1">Cancel</Button>
-              <Button onClick={handlePayClick} disabled={isVerifying} className="flex-1 gap-2">
-                {isVerifying ? <RefreshCw className="h-4 w-4 animate-spin" /> : method === 'razorpay' || method === 'card' ? <Shield className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                {isVerifying ? 'Verifying...' : 'Continue'}
+              <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+              <Button onClick={handlePayClick} className="flex-1 gap-2">
+                <ChevronRight className="h-4 w-4" />
+                {method === 'razorpay' || method === 'card' ? 'Continue to Razorpay' : `Pay ${formatINR(amount || 0)}`}
               </Button>
             </>
           )}
@@ -955,7 +1074,6 @@ export default function App() {
               setWalletBalance(walletData.balance);
             }
           } else {
-            // Token invalid or expired
             console.error('Auth verification failed:', data.error);
             handleLogout();
           }
@@ -966,6 +1084,34 @@ export default function App() {
       }
     };
     checkAuth();
+  }, [])
+
+  // Handle Razorpay redirect-back: auto-credit wallet after payment
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('payment') === 'success') {
+      const refId = params.get('ref')
+      const paidAmount = parseFloat(params.get('amount'))
+      const paidUserId = params.get('userId')
+      window.history.replaceState({}, '', '/')
+      const processReturn = async () => {
+        try {
+          const token = localStorage.getItem('farmbid_token') || localStorage.getItem('token')
+          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+          const res = await fetch(`${API_URL}/wallet/topup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ userId: paidUserId, amount: paidAmount, paymentMethod: 'razorpay', referenceId: refId })
+          })
+          const data = await res.json()
+          if (data.success) {
+            setWalletBalance(data.newBalance)
+            toast.success(`🎉 ₹${paidAmount} added to your wallet!`, { duration: 6000 })
+          }
+        } catch (e) { console.error('Razorpay return handler:', e) }
+      }
+      processReturn()
+    }
   }, [])
 
   // Handle logout
@@ -1138,8 +1284,8 @@ export default function App() {
       return;
     }
 
-    if (!topupAmount || isNaN(topupAmount) || parseFloat(topupAmount) <= 0) {
-      toast.error('Please enter a valid amount')
+    if (!topupAmount || isNaN(topupAmount) || parseFloat(topupAmount) < 2) {
+      toast.error('Minimum deposit amount is ₹2')
       return
     }
     
@@ -1147,17 +1293,14 @@ export default function App() {
     setPaymentDialogOpen(true)
   }
 
-  const handlePaymentConfirm = async (newBalance) => {
-    // Razorpay verification already happened in the PaymentDialog.
-    // We just update the state with the verified balance returned from backend.
-    if (newBalance !== undefined && typeof newBalance === 'number') {
-      setWalletBalance(newBalance);
-    } else {
-      await fetchData(); // Fallback to full refresh
+  const handlePaymentConfirm = (newBalance) => {
+    // The PaymentDialog already handled the backend call & shows its own success screen.
+    // We simply sync the verified balance from the server into our UI state.
+    const numericBalance = Number(newBalance);
+    if (!isNaN(numericBalance)) {
+      setWalletBalance(numericBalance);
     }
-    
     setTopupAmount('');
-    setPaymentDialogOpen(false);
   }
 
   const handleEscrowLock = async (orderId, farmerAddress, amount) => {
