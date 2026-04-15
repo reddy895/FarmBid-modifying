@@ -16,8 +16,7 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [userType, setUserType] = useState('buyer') // buyer, farmer, admin
-  const [useOTP, setUseOTP] = useState(false) // Toggle between password and OTP
+  const [userType] = useState('buyer') // Always buyer
   
   // Form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '', phone: '' })
@@ -45,31 +44,25 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-    
+
     try {
-      const response = await fetch('/api/auth/login', {
+      // First, fetch phone number linked to this email
+      const response = await fetch('/api/auth/get-phone', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginForm)
+        body: JSON.stringify({ email: loginForm.email })
       })
-      
+
       const data = await response.json()
-      
-      if (data.success) {
-        // Store token and user data
-        localStorage.setItem('farmbid_token', data.token)
-        localStorage.setItem('farmbid_user', JSON.stringify(data.user))
-        
-        toast.success('Welcome back!', {
-          description: `Logged in as ${data.user.name}`
-        })
-        
-        // Redirect based on role
-        setTimeout(() => {
-          router.push('/')
-        }, 1000)
+
+      if (data.success && data.phone) {
+        // Phone found, send OTP to that phone
+        const otpSent = await handleSendOTP(data.phone, 'login')
+        if (otpSent) {
+          setLoginForm({...loginForm, phone: data.phone})
+        }
       } else {
-        toast.error('Login failed', { description: data.error })
+        toast.error('Email not found', { description: 'Please check your email or create an account' })
       }
     } catch (error) {
       toast.error('Connection error', { description: 'Please try again' })
@@ -80,56 +73,14 @@ export default function LoginPage() {
 
   const handleSignup = async (e) => {
     e.preventDefault()
-    
+
     if (signupForm.password !== signupForm.confirmPassword) {
       toast.error('Passwords do not match')
       return
     }
-    
-    setIsLoading(true)
-    setSsiStep(1) // Start SSI verification
-    
-    try {
-      // Simulate SSI credential creation delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...signupForm,
-          userType
-        })
-      })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        setSsiStep(2)
-        setVerifiableCredential(data.credential)
-        
-        // Store token and user data
-        localStorage.setItem('farmbid_token', data.token)
-        localStorage.setItem('farmbid_user', JSON.stringify(data.user))
-        
-        toast.success('Account created!', {
-          description: 'Your SSI credential has been issued'
-        })
-        
-        // Redirect after showing credential
-        setTimeout(() => {
-          router.push('/')
-        }, 3000)
-      } else {
-        setSsiStep(0)
-        toast.error('Signup failed', { description: data.error })
-      }
-    } catch (error) {
-      setSsiStep(0)
-      toast.error('Connection error', { description: 'Please try again' })
-    } finally {
-      setIsLoading(false)
-    }
+
+    // Send OTP to phone number provided during signup
+    const otpSent = await handleSendOTP(signupForm.phone, 'signup')
   }
 
   const realGoogleLogin = useGoogleLogin({
@@ -306,16 +257,32 @@ export default function LoginPage() {
 
     try {
       let userData = null
-      
-      // If signup, include user data
+
+      // If signup, include user data and complete registration
       if (purpose === 'signup' && isSignUp) {
         userData = {
           name: signupForm.name,
           email: signupForm.email,
           password: signupForm.password,
           phone,
-          location: signupForm.location
+          location: signupForm.location,
+          userType: 'buyer'
         }
+
+        // Create account
+        const signupResponse = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData)
+        })
+
+        const signupData = await signupResponse.json()
+
+        if (!signupData.success) {
+          throw new Error(signupData.error || 'Signup failed')
+        }
+
+        userData = signupData.user
       }
 
       const response = await fetch('/api/auth/verify-otp', {
@@ -324,7 +291,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           phone,
           otp,
-          userType,
+          userType: 'buyer',
           userData
         })
       })
@@ -332,11 +299,14 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (data.success) {
+        setSsiStep(2)
+        setVerifiableCredential(data.credential)
+
         // Store token and user data
         localStorage.setItem('farmbid_token', data.token)
         localStorage.setItem('farmbid_user', JSON.stringify(data.user))
 
-        const message = data.isNewUser ? 'Account created!' : 'Welcome back!'
+        const message = purpose === 'signup' ? 'Account created!' : 'Welcome back!'
         toast.success(message, {
           description: `Logged in as ${data.user.name}`
         })
@@ -354,22 +324,24 @@ export default function LoginPage() {
           location: '',
           userType: 'buyer'
         })
-        setUseOTP(false)
 
-        // Redirect after a moment
+        // Redirect after showing credential
         setTimeout(() => {
+          setSsiStep(0)
           router.push('/')
-        }, 1000)
+        }, 2000)
       } else {
+        setSsiStep(0)
         setOtpStep(1)
-        toast.error('OTP verification failed', { 
-          description: data.error || 'Invalid OTP. Please try again.' 
+        toast.error('OTP verification failed', {
+          description: data.error || 'Invalid OTP. Please try again.'
         })
       }
     } catch (error) {
       console.error('Verify OTP error:', error)
+      setSsiStep(0)
       setOtpStep(1)
-      toast.error('Connection error', { description: 'Please try again' })
+      toast.error('Connection error', { description: error.message || 'Please try again' })
     } finally {
       setIsLoading(false)
     }
@@ -569,36 +541,6 @@ export default function LoginPage() {
                     <p className="text-gray-500 mb-6">
                       {isSignUp ? 'Join the agricultural revolution' : 'Welcome back to FarmBid'}
                     </p>
-
-                    {/* Authentication Method Toggle */}
-                    <div className="flex gap-2 p-1 rounded-lg mb-6 border border-gray-300" style={{
-                      background: '#FFFFFF'
-                    }}>
-                      <button
-                        type="button"
-                        onClick={() => setUseOTP(false)}
-                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                          !useOTP
-                            ? 'bg-[#228B22] text-white shadow-lg'
-                            : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                      >
-                        <Mail className="h-4 w-4 inline mr-2" />
-                        Email
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setUseOTP(true)}
-                        className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                          useOTP
-                            ? 'bg-[#228B22] text-white shadow-lg'
-                            : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                      >
-                        <Smartphone className="h-4 w-4 inline mr-2" />
-                        OTP
-                      </button>
-                    </div>
 
                     {/* Google Login - Full Width */}
                     <div className="mb-6">
