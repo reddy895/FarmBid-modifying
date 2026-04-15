@@ -25,6 +25,7 @@ const paymentsRouter = require('./routes/paymentRoutes');
 const ordersRouter = require('./routes/orders');
 const escrowRouter = require('./routes/escrow');
 const authRouter = require('./routes/auth');
+const statsRouter = require('./routes/stats');
 
 // Initialize express app
 const app = express();
@@ -83,6 +84,7 @@ app.use('/api/payments', paymentsRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/escrow', escrowRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/stats', statsRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -555,22 +555,25 @@ const BidDialog = ({ listing, isOpen, onClose, onSubmit }) => {
 }
 
 
-const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId }) => {
+const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, userEmail }) => {
   const isMobile = useIsMobile()
-  const [method, setMethod] = useState('phonepe')
+  const [method, setMethod] = useState('razorpay')
   const [paymentPhase, setPaymentPhase] = useState('select')
   const [isVerifying, setIsVerifying] = useState(false)
   const [upiUri, setUpiUri] = useState('')
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+  const [newBalanceAfterPayment, setNewBalanceAfterPayment] = useState(0)
+  const [initialBalance, setInitialBalance] = useState(0)
+  const API_URL = typeof window !== 'undefined' 
+    ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3001/api' 
+        : `http://${window.location.hostname}:3001/api`)
+    : 'http://localhost:3001/api'
 
-  const upiId = process.env.NEXT_PUBLIC_UPI_ID || 'sachin2844@razorpay'
+  const upiId = process.env.NEXT_PUBLIC_UPI_ID || '9019808476-2@axl'
   const txRef = useMemo(() => `FB${Date.now()}${Math.floor(Math.random() * 1000)}`, [isOpen])
 
   const methods = [
-    { id: 'phonepe', name: 'PhonePe', isImage: true, imgSrc: 'https://upload.wikimedia.org/wikipedia/commons/7/71/PhonePe_Logo.svg' },
-    { id: 'gpay', name: 'Google Pay', isImage: true, imgSrc: 'https://pay.google.com/about/static_kcs/images/logos/google-pay-logo.png' },
-    { id: 'razorpay', name: 'Razorpay', isImage: true, imgSrc: 'https://razorpay.com/assets/razorpay-logo.svg' },
-    { id: 'card', name: 'Credit Card', icon: <CreditCard className="h-6 w-6" />, isImage: false },
+    { id: 'razorpay', name: 'Secure Razorpay Checkout', isImage: true, imgSrc: 'https://razorpay.com/assets/razorpay-logo.svg' },
   ]
 
   const generateUpiUri = (amount) => {
@@ -581,28 +584,50 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId }) => {
 
     const formattedAmount = Number(amount).toFixed(2);
     const payeeName = encodeURIComponent('FarmBid');
-    const transactionNote = encodeURIComponent(`Deposit_${txRef.slice(-6)}`);
+    // Shorter transaction reference (some UPI apps have limits)
+    const shortRef = txRef.slice(-12);
+    const transactionNote = encodeURIComponent(`Deposit_${shortRef.slice(-4)}`);
 
     const params = [
       `pa=${upiId}`,
       `pn=${payeeName}`,
       `am=${formattedAmount}`,
+      `tr=${shortRef}`,
       `cu=INR`,
       `tn=${transactionNote}`
     ].join('&');
 
-    // QR Codes strictly require the standard upi:// scheme to be decodable by phone scanners.
+    // QR Codes strictly require the standard upi:// scheme and a transaction reference (tr)
     return `upi://pay?${params}`;
   };
 
-  const handleRazorpay = async () => {
+    // Advanced Sanitization for Razorpay (Targeting 10-digit Indian Mobile)
+    const sanitizedPhone = useMemo(() => {
+      let cleaned = (userPhone || '').replace(/[^0-9]/g, '');
+      // If it has country code 91, strip it to leave 10 digits
+      if (cleaned.length >= 12 && cleaned.startsWith('91')) return cleaned.slice(-10);
+      if (cleaned.length === 11 && cleaned.startsWith('0')) return cleaned.slice(1);
+      return cleaned.slice(-10); // Standard 10 digits
+    }, [userPhone]);
+
+    const handleRazorpay = async () => {
+    // Force grab fresh data from localStorage as a fail-safe
+    const rawUser = localStorage.getItem('farmbid_user');
+    const user = rawUser ? JSON.parse(rawUser) : {};
+    const contactNum = sanitizedPhone || (user.phone || '').replace(/[^0-9]/g, '').slice(-10);
+    const emailAddr = userEmail || user.email || '';
+
     if (!amount || amount <= 0) return toast.error('Please enter a valid amount');
     setIsVerifying(true);
     try {
+      const token = localStorage.getItem('farmbid_token');
       const res = await fetch(`${API_URL}/payments/create-order`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, userId })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ amount })
       });
       const data = await res.json();
       if (!data.success) {
@@ -622,13 +647,26 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId }) => {
           name: 'FarmBid',
           description: `Wallet Top-up: ₹${amount}`,
           order_id: data.orderId,
+          // Force UPI and hide contact details modal
+          config: {
+            display: {
+              blocks: {
+                banks: { name: 'Payment Method', instruments: [{ method: 'upi' }, { method: 'card' }] }
+              },
+              sequence: ['block.banks'],
+              preferences: { show_default_blocks: true }
+            }
+          },
           handler: async (resp) => {
             try {
+              const token = localStorage.getItem('farmbid_token');
               const vres = await fetch(`${API_URL}/payments/verify-payment`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ 
-                  userId, 
                   amount, 
                   razorpay_order_id: resp.razorpay_order_id, 
                   razorpay_payment_id: resp.razorpay_payment_id, 
@@ -637,9 +675,9 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId }) => {
               });
               const vdata = await vres.json();
               if (vdata.success) {
-                toast.success('Payment Verified & Wallet Updated!');
+                setNewBalanceAfterPayment(vdata.balance);
+                setPaymentPhase('success');
                 onConfirm(vdata.balance);
-                onClose();
               } else {
                 toast.error('Verification failed: ' + (vdata.message || 'Unknown error'));
               }
@@ -649,8 +687,13 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId }) => {
               setIsVerifying(false);
             }
           },
-          modal: { ondismiss: () => setIsVerifying(false) },
-          prefill: { name: 'User' },
+          modal: { ondismiss: () => setIsVerifying(false), escape: false },
+          prefill: { 
+            name: user.name || 'FarmBid User',
+            contact: contactNum,
+            email: emailAddr
+          },
+          readonly: { contact: true, email: true, name: true },
           theme: { color: '#16a34a' }
         });
         rzp.open();
@@ -690,11 +733,14 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId }) => {
     setIsVerifying(true);
     // For demo purposes, we allow manual confirmation for Simulated UPI options
     try {
+      const token = localStorage.getItem('farmbid_token');
       const response = await fetch(`${API_URL}/wallet/topup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
-          userId,
           amount,
           paymentMethod: method,
           referenceId: txRef
@@ -702,18 +748,49 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId }) => {
       });
       const data = await response.json();
       if (data.success) {
-        toast.success(`Success! Added ${formatINR(amount)} via ${method}`);
+        setNewBalanceAfterPayment(data.newBalance);
+        setPaymentPhase('success');
         onConfirm(data.newBalance);
-        onClose();
       } else {
         toast.error('Failed to update wallet balance');
       }
     } catch (e) {
       toast.error('Connection error');
-    } finally {
-      setIsVerifying(false);
     }
   }
+
+  // UPI Polling for "Auto Redirect"
+  useEffect(() => {
+    let interval;
+    if (isOpen && paymentPhase === 'scanner' && userId) {
+      // First, get initial balance if not set
+      const fetchInitial = async () => {
+        try {
+          const res = await fetch(`${API_URL}/stats/buyer/${userId}`);
+          const data = await res.json();
+          if (data.success) {
+            setInitialBalance(data.stats.walletBalance);
+          }
+        } catch (e) {}
+      };
+      
+      if (initialBalance === 0) fetchInitial();
+
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch(`${API_URL}/stats/buyer/${userId}`);
+          const data = await res.json();
+          if (data.success && data.stats.walletBalance > initialBalance) {
+            setNewBalanceAfterPayment(data.stats.walletBalance);
+            setPaymentPhase('success');
+            onConfirm(data.stats.walletBalance);
+            clearInterval(interval);
+          }
+        } catch (e) {}
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isOpen, paymentPhase, userId, initialBalance]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(v) => !v && !isVerifying && onClose()}>
@@ -734,7 +811,7 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId }) => {
 
         <div className="py-4">
           {paymentPhase === 'select' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid ${methods.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
               {methods.map((m) => (
                 <div 
                   key={m.id} 
@@ -764,16 +841,33 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId }) => {
             </div>
           )}
 
-          {paymentPhase === 'processing' && (
-            <div className="flex flex-col items-center justify-center space-y-4 py-8">
-              <RefreshCw className="h-12 w-12 text-primary animate-spin" />
-              <p className="font-medium">Processing your transaction...</p>
-            </div>
+          {paymentPhase === 'success' && (
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex flex-col items-center justify-center space-y-4 py-8 text-center"
+            >
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                <CheckCircle2 className="h-10 w-10 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800">Payment Successful!</h3>
+              <div className="space-y-1">
+                <p className="text-muted-foreground">Added {formatINR(amount)} to your wallet</p>
+                <div className="p-4 bg-muted/50 rounded-2xl mt-4">
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">New Wallet Balance</p>
+                  <p className="text-3xl font-bold mt-1 text-primary">{formatINR(newBalanceAfterPayment)}</p>
+                </div>
+              </div>
+            </motion.div>
           )}
         </div>
 
         <DialogFooter className="sm:justify-between gap-3">
-          {paymentPhase === 'scanner' ? (
+          {paymentPhase === 'success' ? (
+            <Button className="w-full" onClick={onClose}>
+              Back to Dashboard
+            </Button>
+          ) : paymentPhase === 'scanner' ? (
             <>
               <Button variant="ghost" onClick={handleReset} disabled={isVerifying}>Back</Button>
               <Button onClick={handleManualConfirm} disabled={isVerifying} className="gap-2">
@@ -815,6 +909,13 @@ export default function App() {
   const [topupAmount, setTopupAmount] = useState('')
   const [topupLoading, setTopupLoading] = useState(false)
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  
+  // Real Dashboard Stats
+  const [dashboardStats, setDashboardStats] = useState({
+    activeBids: 0,
+    wonAuctions: 0,
+    totalSaved: 0
+  });
   
   // Authentication state
   const [currentUser, setCurrentUser] = useState(null)
@@ -881,18 +982,25 @@ export default function App() {
     const fetchData = async () => {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        const [listingsRes, eventsRes, walletRes] = await Promise.all([
+        const [listingsRes, eventsRes, statsRes] = await Promise.all([
           fetch(`${API_URL}/listings?status=all`),
           fetch(`${API_URL}/blockchain/events`),
-          fetch(`${API_URL}/wallet/balance?buyerId=${currentUser?.id || 'b1'}`)
+          fetch(`${API_URL}/stats/buyer/${currentUser?.id || 'demo_id'}`)
         ])
         const listingsData = await listingsRes.json()
         const eventsData = await eventsRes.json()
-        const walletData = await walletRes.json()
+        const statsData = await statsRes.json()
+        
         setListings(listingsData.listings || [])
         setBlockchainEvents(eventsData.events || [])
-        if (walletData.success) {
-          setWalletBalance(walletData.balance || 0)
+        
+        if (statsData.success) {
+          setWalletBalance(statsData.stats.walletBalance || 0)
+          setDashboardStats({
+            activeBids: statsData.stats.activeBids || 0,
+            wonAuctions: statsData.stats.wonAuctions || 0,
+            totalSaved: statsData.stats.totalSaved || 0
+          })
         }
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -1304,10 +1412,10 @@ export default function App() {
 
                   {/* Quick Stats */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <KPICard title="Wallet Balance" value={formatINR(walletBalance)} icon={Wallet} trend="+₹0 today" />
-                    <KPICard title="Active Bids" value="0" icon={Gavel} trend="0 leading" />
-                    <KPICard title="Won Auctions" value="0" icon={Award} trend="+0 this week" />
-                    <KPICard title="Total Saved" value="₹0" icon={TrendingUp} trend="+0% vs mandi rates" />
+                    <KPICard title="Wallet Balance" value={formatINR(walletBalance)} icon={Wallet} trend={walletBalance === 0 ? "Empty" : "Secure"} />
+                    <KPICard title="Active Bids" value={dashboardStats.activeBids} icon={Gavel} trend={`${dashboardStats.activeBids} active`} />
+                    <KPICard title="Won Auctions" value={dashboardStats.wonAuctions} icon={Award} trend={`${dashboardStats.wonAuctions} this week`} />
+                    <KPICard title="Total Saved" value={formatINR(dashboardStats.totalSaved)} icon={TrendingUp} trend="estimated" />
                   </div>
 
                   {/* Featured Auctions */}
@@ -2006,6 +2114,8 @@ export default function App() {
           amount={parseFloat(topupAmount)}
           onConfirm={handlePaymentConfirm}
           userId={currentUser?.id}
+          userPhone={currentUser?.phone}
+          userEmail={currentUser?.email}
           initialPhase="scanner"
         />
       </div>

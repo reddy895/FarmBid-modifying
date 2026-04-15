@@ -10,6 +10,8 @@ import {
   ChevronRight, CheckCircle2, Globe, Smartphone
 } from 'lucide-react'
 import { useGoogleLogin } from '@react-oauth/google'
+import FacebookLogin from 'react-facebook-login/dist/facebook-login-render-props.js'
+import { LinkedIn } from 'react-linkedin-login-oauth2'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -159,9 +161,170 @@ export default function LoginPage() {
     onError: () => toast.error('Google Login Popup Closed or Failed')
   });
 
-  const handleSocialLogin = async (provider) => {
+  const handleFacebookLogin = async (response) => {
+    if (process.env.NEXT_PUBLIC_FACEBOOK_APP_ID === "123456789" || !response.accessToken) {
+       // Support for local testing without real keys
+       if (!response.accessToken) {
+         toast.info("Dev Mode: Mocking Facebook login...");
+         return simulateFacebookSuccess();
+       }
+    }
+    
+    setIsLoading(true)
+    toast.info('Authenticating with Facebook...')
+    
+    try {
+      const res = await fetch('/api/auth/facebook-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: response.accessToken, role: userType })
+      })
+      
+      const data = await res.json()
+      
+      if (data.success) {
+        localStorage.setItem('farmbid_token', data.token)
+        localStorage.setItem('farmbid_user', JSON.stringify(data.user))
+        
+        toast.success('Facebook Authentication Successful!', {
+          description: `Welcome, ${data.user.name}!`
+        })
+        
+        setTimeout(() => router.push('/'), 1000)
+      } else {
+        toast.error('Facebook login failed', { description: data.error })
+      }
+    } catch (error) {
+      toast.error('Facebook connection error', { description: 'Please try again' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const simulateFacebookSuccess = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/demo-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: userType })
+      });
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem('farmbid_token', data.token);
+        localStorage.setItem('farmbid_user', JSON.stringify({
+          ...data.user,
+          name: 'Demo Facebook User',
+          email: 'fb-demo@example.com'
+        }));
+        toast.success('System: Mock Facebook Login Successful');
+        setTimeout(() => router.push('/'), 1000);
+      } else {
+        toast.error('Simulation Failed', { description: data.error });
+      }
+    } catch (error) {
+      toast.error('Simulation Connection Error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLinkedInLogin = async (response) => {
+    if (process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID === "123456789") {
+        toast.info("Dev Mode: Mocking LinkedIn login...");
+        return simulateLinkedInSuccess();
+    }
+    
+    if (!response.code) {
+      toast.error('LinkedIn Login Failed');
+      return;
+    }
+    
+    setIsLoading(true)
+    toast.info('Authenticating with LinkedIn...')
+    
+    try {
+      const res = await fetch('/api/auth/linkedin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: response.code, role: userType })
+      })
+      
+      const data = await res.json()
+      
+      if (data.success) {
+        localStorage.setItem('farmbid_token', data.token)
+        localStorage.setItem('farmbid_user', JSON.stringify(data.user))
+        
+        toast.success('LinkedIn Authentication Successful!', {
+          description: `Welcome, ${data.user.name}!`
+        })
+        
+        setTimeout(() => router.push('/'), 1000)
+      } else {
+        toast.error('LinkedIn login failed', { description: data.error })
+      }
+    } catch (error) {
+      toast.error('LinkedIn connection error', { description: 'Please try again' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const simulateLinkedInSuccess = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/demo-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: userType })
+      });
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem('farmbid_token', data.token);
+        localStorage.setItem('farmbid_user', JSON.stringify({
+          ...data.user,
+          name: 'Demo LinkedIn User',
+          email: 'li-demo@example.com'
+        }));
+        toast.success('System: Mock LinkedIn Login Successful');
+        setTimeout(() => router.push('/'), 1000);
+      } else {
+        toast.error('Simulation Failed', { description: data.error });
+      }
+    } catch (error) {
+      toast.error('Simulation Connection Error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (provider, realLoginFn) => {
     if (provider === 'Google') {
       return realGoogleLogin();
+    }
+    
+    // Developer Shortcut: Bypass real APIs if keys aren't set
+    const isFacebookDev = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID === "123456789" || !process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+    const isLinkedInDev = process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID === "123456789" || !process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID;
+
+    if (provider === 'Facebook' && isFacebookDev) {
+      toast.info("Dev Mode: Simulating Facebook login...");
+      return await simulateFacebookSuccess();
+    }
+    
+    if (provider === 'LinkedIn' && isLinkedInDev) {
+      toast.info("Dev Mode: Simulating LinkedIn login...");
+      return await simulateLinkedInSuccess();
+    }
+
+    if (provider === 'Demo Credentials') {
+      return handleLogin(null, true);
+    }
+
+    // If we have a real login function (from SDK wrappers) and we're NOT in dev mode, use it
+    if (realLoginFn) {
+      return realLoginFn();
     }
     
     setIsLoading(true)
@@ -197,9 +360,10 @@ export default function LoginPage() {
         
         setTimeout(() => router.push('/'), 1000)
       } else {
-         toast.error(`${provider} login failed`, { description: data.error })
+        toast.error(`${provider} login failed`, { description: data.error })
       }
     } catch (error) {
+      console.error('Social login error:', error);
       toast.error(`${provider} connection error`, { description: 'Please try again' })
     } finally {
       setIsLoading(false)
@@ -404,10 +568,11 @@ export default function LoginPage() {
 
                     {/* Social Login */}
                     <div className="flex justify-center gap-4 mb-6">
-                      {['Google', 'Facebook', 'LinkedIn'].map((provider) => (
+                      {['Google', 'Facebook', 'LinkedIn'].map((provider) => {
+                        const btn = (onClickFn) => (
                         <button
                           key={provider}
-                          onClick={() => handleSocialLogin(provider)}
+                          onClick={onClickFn}
                           className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300"
                           style={{
                             background: '#e0e5ec',
@@ -422,7 +587,7 @@ export default function LoginPage() {
                               <path fill="#EA4335" d="M5.26620003,9.76452941 C6.19878754,6.93863203 8.85444915,4.90909091 12,4.90909091 C13.6909091,4.90909091 15.2181818,5.50909091 16.4181818,6.49090909 L19.9090909,3 C17.7818182,1.14545455 15.0545455,0 12,0 C7.27006974,0 3.1977497,2.69829785 1.23999023,6.65002441 L5.26620003,9.76452941 Z"/>
                               <path fill="#34A853" d="M16.0407269,18.0125889 C14.9509167,18.7163016 13.5660892,19.0909091 12,19.0909091 C8.86648613,19.0909091 6.21911939,17.076871 5.27698177,14.2678769 L1.23746264,17.3349879 C3.19279051,21.2970244 7.26500293,24 12,24 C14.9328362,24 17.7353462,22.9573905 19.834192,20.9995801 L16.0407269,18.0125889 Z"/>
                               <path fill="#4A90E2" d="M19.834192,20.9995801 C22.0291676,18.9520994 23.4545455,15.903663 23.4545455,12 C23.4545455,11.2909091 23.3454545,10.5272727 23.1818182,9.81818182 L12,9.81818182 L12,14.4545455 L18.4363636,14.4545455 C18.1187732,16.013626 17.2662994,17.2212117 16.0407269,18.0125889 L19.834192,20.9995801 Z"/>
-                              <path fill="#FBBC05" d="M5.27698177,14.2678769 C5.03832634,13.556323 4.90909091,12.7937589 4.90909091,12 C4.90909091,11.2182781 5.03443647,10.4668121 5.26620003,9.76452941 L1.23999023,6.65002441 C0.43658717,8.26043162 0,10.0753848 0,12 C0,13.9195484 0.444780743,15.7## 1.23746264,17.3349879 L5.27698177,14.2678769 Z"/>
+                              <path fill="#FBBC05" d="M5.27698177,14.2678769 C5.03832634,13.556323 4.90909091,12.7937589 4.90909091,12 C4.90909091,11.2182781 5.03443647,10.4668121 5.26620003,9.76452941 L1.23999023,6.65002441 C0.43658717,8.26043162 0,10.0753848 0,12 C0,13.9195484 0.444780743,15.7720917 1.23746264,17.3349879 L5.27698177,14.2678769 Z"/>
                             </svg>
                           )}
                           {provider === 'Facebook' && (
@@ -436,7 +601,40 @@ export default function LoginPage() {
                             </svg>
                           )}
                         </button>
-                      ))}
+                        );
+                        
+                        const isFacebookConfigured = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID && process.env.NEXT_PUBLIC_FACEBOOK_APP_ID !== "123456789";
+                        const isLinkedInConfigured = process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID && process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID !== "123456789";
+
+                        if (provider === 'Facebook' && isFacebookConfigured) {
+                          return (
+                            <FacebookLogin
+                              key={provider}
+                              appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}
+                              callback={handleFacebookLogin}
+                              fields="name,email,picture"
+                              render={renderProps => btn(renderProps.onClick)}
+                            />
+                          );
+                        }
+                        
+                        if (provider === 'LinkedIn' && isLinkedInConfigured) {
+                          return (
+                            <LinkedIn
+                              key={provider}
+                              clientId={process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID}
+                              redirectUri={`${typeof window !== 'undefined' ? window.location.origin : ''}/linkedin`}
+                              onSuccess={handleLinkedInLogin}
+                              onError={() => toast.error('LinkedIn Login Failed')}
+                            >
+                              {({ linkedInLogin }) => btn(linkedInLogin)}
+                            </LinkedIn>
+                          );
+                        }
+                        
+                        // Default: Use our handled mock/real logic for Google or Dev Mode
+                        return btn(() => handleSocialLogin(provider));
+                      })}
                     </div>
 
                     <div className="flex items-center gap-4 mb-6">

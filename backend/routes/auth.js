@@ -328,9 +328,9 @@ router.post('/demo-login', async (req, res) => {
           phone: '+91 80 2345 6789',
           type: 'Retailer',
           location: 'Bengaluru',
-          walletBalance: 250000,
-          totalBids: 156,
-          wonAuctions: 89,
+          walletBalance: 0,
+          totalBids: 0,
+          wonAuctions: 0,
           trustScore: 98,
           joinedDate: '2024-07-01',
           gstNumber: 'GSTIN001',
@@ -745,6 +745,246 @@ router.post('/google-login', async (req, res) => {
   } catch (error) {
     console.error('Google login error:', error);
     res.status(500).json({ success: false, error: 'Google Authentication failed', details: error.message });
+  }
+});
+
+/**
+ * @route   POST /api/auth/facebook-login
+ * @desc    Authenticate or register user with Facebook Single Sign-on
+ * @access  Public
+ */
+router.post('/facebook-login', async (req, res) => {
+  try {
+    const { token, role } = req.body; // default to buyer
+    const userRole = role || 'buyer';
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'No token provided' });
+    }
+
+    // Verify Facebook Access Token by fetching user profile
+    const userInfoRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${token}`);
+    
+    if (!userInfoRes.ok) {
+       return res.status(401).json({ success: false, error: 'Invalid Facebook access token' });
+    }
+
+    const payload = await userInfoRes.json();
+    const { email, name, id: facebookId, picture } = payload;
+    const profilePicture = picture?.data?.url;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Facebook account missing email' });
+    }
+
+    // Check if user exists across all models mapped to this email
+    let user = await Buyer.findOne({ email });
+    let userType = 'buyer';
+
+    if (!user) {
+      user = await Farmer.findOne({ email });
+      if (user) {
+        userType = 'farmer';
+      }
+    }
+
+    if (!user) {
+       // Create a new user since they don't exist
+       userType = ['farmer'].includes(userRole.toLowerCase()) ? 'farmer' : 'buyer';
+       
+       if (userType === 'buyer') {
+         const buyerCount = await Buyer.countDocuments();
+         user = new Buyer({
+            code: `B${String(buyerCount + 1).padStart(3, '0')}`,
+            name,
+            email,
+            phone: `FB-${facebookId}`,
+            password: crypto.randomBytes(16).toString('hex'),
+            profileImage: profilePicture,
+            type: 'Individual',
+            location: 'Not specified',
+            role: 'buyer',
+            joinedDate: new Date().toISOString().split('T')[0],
+            walletBalance: 50000, // Seed money
+            trustScore: 80,
+            isDemo: false
+         });
+       } else {
+         const farmerCount = await Farmer.countDocuments();
+         user = new Farmer({
+            code: `KA-XX-${String(farmerCount + 1).padStart(3, '0')}`,
+            name,
+            email,
+            phone: `FB-${facebookId}`,
+            password: crypto.randomBytes(16).toString('hex'),
+            profileImage: profilePicture,
+            village: 'Unknown',
+            district: 'Unknown',
+            pincode: '000000',
+            landSize: '0 acres',
+            role: 'farmer',
+            joinedDate: new Date().toISOString().split('T')[0],
+            trustScore: 50,
+            crops: [],
+            isDemo: false
+         });
+       }
+       await user.save();
+    } else {
+      // Update missing Facebook Info if they just logged in differently
+      if (!user.profileImage && profilePicture) {
+        user.profileImage = profilePicture;
+        await user.save();
+      }
+    }
+
+    // Generate our JWT token using our standard secret
+    const jwtToken = jwt.sign(
+      {
+        userId: user._id.toString(),
+        userType: userType,
+        email: user.email,
+        name: user.name,
+        isDemo: user.isDemo || false,
+        role: user.role || userType
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    // Form user response
+    const userResponse = {
+      id: user._id,
+      code: user.code,
+      name: user.name,
+      email: user.email,
+      phone: user.phone || '',
+      role: user.role || userType,
+      isDemo: user.isDemo || false,
+      walletBalance: user.walletBalance || 0,
+      trustScore: user.trustScore || 80,
+      profileImage: user.profileImage || null
+    };
+
+    if (userType === 'farmer') {
+      userResponse.village = user.village;
+      userResponse.district = user.district;
+      userResponse.landSize = user.landSize;
+      userResponse.crops = user.crops || [];
+    }
+
+    res.json({
+      success: true,
+      token: jwtToken,
+      user: userResponse
+    });
+
+  } catch (error) {
+    console.error('Facebook login error:', error);
+    res.status(500).json({ success: false, error: 'Facebook Authentication failed', details: error.message });
+  }
+});
+
+/**
+ * @route   POST /api/auth/linkedin-login
+ * @desc    Authenticate or register user with LinkedIn Single Sign-on
+ * @access  Public
+ */
+router.post('/linkedin-login', async (req, res) => {
+  try {
+    const { token, role } = req.body;
+    const userRole = role || 'buyer';
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'No token provided' });
+    }
+
+    // Verify LinkedIn Access Token (Step 1: Get profile)
+    const userInfoRes = await fetch('https://api.linkedin.com/v2/userinfo', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    if (!userInfoRes.ok) {
+       return res.status(401).json({ success: false, error: 'Invalid LinkedIn access token' });
+    }
+
+    const payload = await userInfoRes.json();
+    const { email, name, sub: linkedinId, picture } = payload;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'LinkedIn account missing email' });
+    }
+
+    // Check if user exists
+    let user = await Buyer.findOne({ email });
+    let userType = 'buyer';
+
+    if (!user) {
+      user = await Farmer.findOne({ email });
+      if (user) userType = 'farmer';
+    }
+
+    if (!user) {
+       // Create new user
+       userType = ['farmer'].includes(userRole.toLowerCase()) ? 'farmer' : 'buyer';
+       if (userType === 'buyer') {
+         const buyerCount = await Buyer.countDocuments();
+         user = new Buyer({
+            code: `B${String(buyerCount + 1).padStart(3, '0')}`,
+            name, email,
+            phone: `LI-${linkedinId}`,
+            password: crypto.randomBytes(16).toString('hex'),
+            profileImage: picture,
+            type: 'Individual',
+            location: 'Not specified',
+            role: 'buyer',
+            joinedDate: new Date().toISOString().split('T')[0],
+            walletBalance: 50000,
+            trustScore: 80,
+            isDemo: false
+         });
+       } else {
+         const farmerCount = await Farmer.countDocuments();
+         user = new Farmer({
+            code: `KA-XX-${String(farmerCount + 1).padStart(3, '0')}`,
+            name, email,
+            phone: `LI-${linkedinId}`,
+            password: crypto.randomBytes(16).toString('hex'),
+            profileImage: picture,
+            village: 'Unknown', district: 'Unknown', pincode: '000000', landSize: '0 acres',
+            role: 'farmer',
+            joinedDate: new Date().toISOString().split('T')[0],
+            trustScore: 50, crops: [],
+            isDemo: false
+         });
+       }
+       await user.save();
+    }
+
+    const jwtToken = jwt.sign(
+      { userId: user._id.toString(), userType, email, name, isDemo: false, role: user.role || userType },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    res.json({
+      success: true,
+      token: jwtToken,
+      user: {
+        id: user._id,
+        code: user.code,
+        name: user.name,
+        email: user.email,
+        role: user.role || userType,
+        walletBalance: user.walletBalance || 0,
+        trustScore: user.trustScore || 80,
+        profileImage: user.profileImage || null
+      }
+    });
+
+  } catch (error) {
+    console.error('LinkedIn login error:', error);
+    res.status(500).json({ success: false, error: 'LinkedIn Authentication failed' });
   }
 });
 

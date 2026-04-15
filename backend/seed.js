@@ -685,8 +685,8 @@ const seedDatabase = async () => {
         {
           userId: demoBuyerFromDB._id.toString(),
           userType: 'buyer',
-          balance: 250000,
-          availableBalance: 250000
+          balance: 0,
+          availableBalance: 0
         },
         { upsert: true }
       );
