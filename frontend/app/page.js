@@ -34,41 +34,48 @@ import {
   ArrowUpRight, ArrowDownRight, Send, Mic, Image as ImageIcon,
   Phone, MoreVertical, Check, Copy, Filter, RefreshCw, Truck,
   FileText, CreditCard, Building2, Star, Award, Zap, Globe, Lock,
-  LogOut, User, Fingerprint
+  LogOut, User, Fingerprint, Receipt, Handshake
 } from 'lucide-react'
 
 // WhatsApp demo messages
 const whatsappMessages = {
   english: [
     { type: 'bot', text: 'Welcome to FarmBid! I am your assistant. How can I help you today?' },
-    { type: 'bot', text: 'Reply with:\n1️⃣ Create new listing\n2️⃣ Check my listings\n3️⃣ View earnings\n4️⃣ Help' },
+    { type: 'bot', text: 'Reply with:\n1. Create new listing\n2. Check my listings\n3. View earnings\n4. Help' },
     { type: 'user', text: '1' },
     { type: 'bot', text: "Great! Let's create a new listing. Please send a photo of your produce." },
     { type: 'user', text: '[Photo of tomatoes]', isImage: true },
-    { type: 'bot', text: '🍅 I see fresh Tomatoes! Quality looks Premium grade.\n\nWhat is the total weight (in kg)?' },
+    { type: 'bot', text: 'Tomatoes! Quality looks Premium grade.\n\nWhat is the total weight (in kg)?' },
     { type: 'user', text: '500 kg' },
     { type: 'bot', text: 'Got it! 500 kg of Tomatoes.\n\nWhat is your minimum price per kg? (Current market: ₹30-40/kg)' },
     { type: 'user', text: '32' },
     { type: 'bot', text: 'Perfect! ₹32 per kg minimum.\n\nWhen was this harvested? (DD/MM or today)' },
     { type: 'user', text: 'today' },
-    { type: 'bot', text: '✅ Your listing is being processed...\n\n📋 Summary:\n🍅 Tomatoes - 500 kg\n💰 Min Price: ₹32/kg\n🏷️ Total Value: ₹16,000+\n📍 Srinivaspur, Kolar\n\n⛓️ Anchoring to blockchain...' },
-    { type: 'bot', text: '🎉 Listing is LIVE!\n\nAuction ID: #KOL-2025-0628\nEnds in: 24 hours\n\nYou will receive updates when buyers bid.\n\n🔗 Chain Hash: 0x8f9a...8f9a' }
+    { type: 'bot', text: 'Your listing is being processed...\n\nSummary:\n- Tomatoes: 500 kg\n- Min Price: ₹32/kg\n- Total Value: ₹16,000+\n- Srinivaspur, Kolar\n\nAnchoring to blockchain...' },
+    { type: 'bot', text: 'Listing is LIVE!\n\nAuction ID: #KOL-2025-0628\nEnds in: 24 hours\n\nYou will receive updates when buyers bid.\n\nChain Hash: 0x8f9a...8f9a' }
   ],
   hindi: [
     { type: 'bot', text: 'FarmBid में आपका स्वागत है! मैं आपका सहायक हूं। आज मैं आपकी कैसे मदद कर सकता हूं?' },
-    { type: 'bot', text: 'जवाब दें:\n1️⃣ नई लिस्टिंग बनाएं\n2️⃣ मेरी लिस्टिंग देखें\n3️⃣ कमाई देखें\n4️⃣ मदद' },
+    { type: 'bot', text: 'जवाब दें:\n1. नई लिस्टिंग बनाएं\n2. मेरी लिस्टिंग देखें\n3. कमाई देखें\n4. मदद' },
     { type: 'user', text: '1' },
-    { type: 'bot', text: 'बहुत अच्छा! नई लिस्टिंग बनाते हैं। कृपया अपनी उपज की फोटो भेजें।' },
+    { type: 'bot', text: "बहुत अच्छा! चलिए एक नई लिस्टिंग बनाते हैं। कृपया अपनी उपज की एक फोटो भेजें।" },
     { type: 'user', text: '[टमाटर की फोटो]', isImage: true },
-    { type: 'bot', text: '🍅 ताजे टमाटर दिख रहे हैं! गुणवत्ता प्रीमियम ग्रेड है।\n\nकुल वजन कितना है (किलो में)?' }
+    { type: 'bot', text: 'टमाटर! गुणवत्ता प्रीमियम स्तर की लग रही है।\n\nकुल वजन (किलोग्राम में) क्या है?' },
+    { type: 'user', text: '500 kg' },
+    { type: 'bot', text: 'समझ गया! 500 किलो टमाटर।\n\nप्रति किलो आपकी न्यूनतम कीमत क्या है? (वर्तमान बाजार: ₹30-40/kg)' },
+    { type: 'user', text: '32' },
+    { type: 'bot', text: 'बेहतरीन! ₹32 प्रति किलो न्यूनतम।\n\nइसकी कटाई कब हुई थी? (DD/MM या आज)' },
+    { type: 'user', text: 'आज' },
+    { type: 'bot', text: 'आपकी लिस्टिंग प्रोसेस की जा रही है...\n\nसारांश:\n- टमाटर: 500 kg\n- न्यूनतम मूल्य: ₹32/kg\n- कुल मूल्य: ₹16,000+\n- श्रीनिवासपुर, कोलार\n\nब्लॉकचेन पर एंकरिंग की जा रही है...' },
+    { type: 'bot', text: 'लिस्टिंग लाइव है!\n\nनीलामी ID: #KOL-2025-0628\nसमाप्ति: 24 घंटे में\n\nखरीदारों के बोली लगाने पर आपको अपडेट मिलते रहेंगे।\n\nचेन हैश: 0x8f9a...8f9a' }
   ],
   kannada: [
-    { type: 'bot', text: 'FarmBid ಗೆ ಸ್ವಾಗತ! ನಾನು ನಿಮ್ಮ ಸಹಾಯಕ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?' },
-    { type: 'bot', text: 'ಉತ್ತರಿಸಿ:\n1️⃣ ಹೊಸ ಪಟ್ಟಿ ರಚಿಸಿ\n2️⃣ ನನ್ನ ಪಟ್ಟಿಗಳನ್ನು ನೋಡಿ\n3️⃣ ಗಳಿಕೆ ನೋಡಿ\n4️⃣ ಸಹಾಯ' },
+    { type: 'bot', text: 'FarmBid à²—à³† à²¸à³à²µà²¾à²—à²¤! à²¨à²¾à²¨à³ à²¨à²¿à²®à³à²® à²¸à²¹à²¾à²¯à²•. à²‡à²‚à²¦à³ à²¨à²¾à²¨à³ à²¨à²¿à²®à²—à³† à²¹à³‡à²—à³† à²¸à²¹à²¾à²¯ à²®à²¾à²¡à²¬à²¹à³à²¦à³?' },
+    { type: 'bot', text: 'à²‰à²¤à³à²¤à²°à²¿à²¸à²¿:\n1ï¸âƒ£ à²¹à³Šà²¸ à²ªà²Ÿà³à²Ÿà²¿ à²°à²šà²¿à²¸à²¿\n2ï¸âƒ£ à²¨à²¨à³à²¨ à²ªà²Ÿà³à²Ÿà²¿à²—à²³à²¨à³à²¨à³ à²¨à³‹à²¡à²¿\n3ï¸âƒ£ à²—à²³à²¿à²•à³† à²¨à³‹à²¡à²¿\n4ï¸âƒ£ à²¸à²¹à²¾à²¯' },
     { type: 'user', text: '1' },
-    { type: 'bot', text: 'ಅದ್ಭುತ! ಹೊಸ ಪಟ್ಟಿ ಮಾಡೋಣ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಉತ್ಪನ್ನದ ಫೋಟೋ ಕಳಿಸಿ.' },
-    { type: 'user', text: '[ಟೊಮೆಟೊ ಫೋಟೋ]', isImage: true },
-    { type: 'bot', text: '🍅 ತಾಜಾ ಟೊಮೆಟೊ ಕಾಣಿಸುತ್ತಿದೆ! ಗುಣಮಟ್ಟ ಪ್ರೀಮಿಯಂ ಆಗಿದೆ.\n\nಒಟ್ಟು ತೂಕ ಎಷ್ಟು (ಕೆಜಿಯಲ್ಲಿ)?' }
+    { type: 'bot', text: 'à²…à²¦à³à²­à³à²¤! à²¹à³Šà²¸ à²ªà²Ÿà³à²Ÿà²¿ à²®à²¾à²¡à³‹à²£. à²¦à²¯à²µà²¿à²Ÿà³à²Ÿà³ à²¨à²¿à²®à³à²® à²‰à²¤à³à²ªà²¨à³à²¨à²¦ à²«à³‹à²Ÿà³‹ à²•à²³à²¿à²¸à²¿.' },
+    { type: 'user', text: '[à²Ÿà³Šà²®à³†à²Ÿà³Š à²«à³‹à²Ÿà³‹]', isImage: true },
+    { type: 'bot', text: 'ðŸ… à²¤à²¾à²œà²¾ à²Ÿà³Šà²®à³†à²Ÿà³Š à²•à²¾à²£à²¿à²¸à³à²¤à³à²¤à²¿à²¦à³†! à²—à³à²£à²®à²Ÿà³à²Ÿ à²ªà³à²°à³€à²®à²¿à²¯à²‚ à²†à²—à²¿à²¦à³†.\n\nà²’à²Ÿà³à²Ÿà³ à²¤à³‚à²• à²Žà²·à³à²Ÿà³ (à²•à³†à²œà²¿à²¯à²²à³à²²à²¿)?' }
   ]
 }
 
@@ -198,7 +205,7 @@ const AuctionCard = ({ listing, onBid }) => {
           />
           <div className="absolute top-2 left-2 flex gap-1.5">
             <Badge variant={listing.status === 'ending_soon' ? 'destructive' : 'default'} className="backdrop-blur-sm">
-              {listing.status === 'ending_soon' ? '🔥 Ending Soon' : listing.status === 'live' ? '🟢 Live' : listing.status}
+              {listing.status === 'ending_soon' ? 'ðŸ”¥ Ending Soon' : listing.status === 'live' ? 'ðŸŸ¢ Live' : listing.status}
             </Badge>
           </div>
           <div className="absolute top-2 right-2 space-y-1">
@@ -221,7 +228,7 @@ const AuctionCard = ({ listing, onBid }) => {
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <span>{listing.produceIcon || '🌾'}</span>
+                <span>{listing.produceIcon || 'ðŸŒ¾'}</span>
                 {listing.produce || 'Farm Produce'}
               </CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1 text-sm">
@@ -463,7 +470,7 @@ const BlockchainEvent = ({ event }) => {
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
           <span>Block #{event.blockNumber}</span>
-          <span>•</span>
+          <span>â€¢</span>
           <span>{new Date(event.timestamp).toLocaleString()}</span>
         </div>
       </div>
@@ -501,19 +508,15 @@ const KPICard = ({ title, value, icon: Icon, trend, trendUp }) => (
 // Bid Dialog
 const BidDialog = ({ listing, isOpen, onClose, onSubmit }) => {
   const [bidAmount, setBidAmount] = useState('')
-
   if (!listing) return null
-
   const minBid = listing.currentBidPerKg + 1
   const totalValue = bidAmount ? bidAmount * listing.quantity : 0
-
   const handleSubmit = () => {
     if (bidAmount >= minBid) {
       onSubmit(listing.id, parseFloat(bidAmount))
       onClose()
     }
   }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -522,197 +525,209 @@ const BidDialog = ({ listing, isOpen, onClose, onSubmit }) => {
             <span>{listing.produceIcon}</span>
             Place Bid - {listing.produce}
           </DialogTitle>
-          <DialogDescription>
-            From {listing.farmerName} ({listing.farmerCode})
-          </DialogDescription>
+          <DialogDescription>From {listing.farmerName} ({listing.farmerCode})</DialogDescription>
         </DialogHeader>
-
         <div className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
-            <div>
-              <p className="text-sm text-muted-foreground">Quantity</p>
-              <p className="font-semibold">{listing.quantity} {listing.unit}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Current Bid</p>
-              <p className="font-bold text-primary">{formatINR(listing.currentBidPerKg)}/kg</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Floor Price</p>
-              <p className="font-semibold">{formatINR(listing.minPricePerKg)}/kg</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Quality</p>
-              <Badge variant={listing.qualityGrade === 'Premium' ? 'default' : 'secondary'}>
-                {listing.qualityGrade}
-              </Badge>
-            </div>
+            <div><p className="text-sm text-muted-foreground">Quantity</p><p className="font-semibold">{listing.quantity} {listing.unit}</p></div>
+            <div><p className="text-sm text-muted-foreground">Current Bid</p><p className="font-bold text-primary">{formatINR(listing.currentBidPerKg)}/kg</p></div>
+            <div><p className="text-sm text-muted-foreground">Floor Price</p><p className="font-semibold">{formatINR(listing.minPricePerKg)}/kg</p></div>
+            <div><p className="text-sm text-muted-foreground">Quality</p><Badge variant={listing.qualityGrade === 'Premium' ? 'default' : 'secondary'}>{listing.qualityGrade}</Badge></div>
           </div>
-
           <div className="space-y-2">
             <Label>Your Bid (per kg)</Label>
             <div className="relative">
               <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="number"
-                placeholder={`Min ${formatINR(minBid)}`}
-                value={bidAmount}
-                onChange={(e) => setBidAmount(e.target.value)}
-                className="pl-9"
-                min={minBid}
-              />
+              <Input type="number" placeholder={`Min ${formatINR(minBid)}`} value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} className="pl-9" min={minBid} />
             </div>
             <p className="text-xs text-muted-foreground">Minimum bid: {formatINR(minBid)}/kg</p>
           </div>
-
           {bidAmount >= minBid && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 bg-primary/10 rounded-lg border border-primary/20"
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Total Lot Value</span>
-                <span className="text-xl font-bold text-primary">{formatINR(totalValue)}</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                This amount will be locked in escrow if you win
-              </p>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+              <div className="flex justify-between items-center"><span className="text-sm">Total Lot Value</span><span className="text-xl font-bold text-primary">{formatINR(totalValue)}</span></div>
             </motion.div>
           )}
-
-          <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
-            <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5" />
-            <p className="text-xs text-amber-700 dark:text-amber-300">
-              Your wallet funds will be locked upon placing a bid. If you win, the amount moves to escrow.
-            </p>
-          </div>
         </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!bidAmount || bidAmount < minBid}>
-            <Gavel className="h-4 w-4 mr-2" />
-            Place Bid
-          </Button>
-        </DialogFooter>
+        <DialogFooter><Button variant="outline" onClick={onClose}>Cancel</Button><Button onClick={handleSubmit} disabled={!bidAmount || bidAmount < minBid}><Gavel className="h-4 w-4 mr-2" />Place Bid</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-// Payment Dialog
-const PaymentDialog = ({ isOpen, onClose, amount, onConfirm }) => {
+
+const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId }) => {
   const isMobile = useIsMobile()
   const [method, setMethod] = useState('phonepe')
-  const [paymentPhase, setPaymentPhase] = useState('select') // 'select', 'scanner', 'processing'
+  const [paymentPhase, setPaymentPhase] = useState('select')
+  const [isVerifying, setIsVerifying] = useState(false)
   const [upiUri, setUpiUri] = useState('')
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
-  // Generate a unique transaction reference for this dialog session
-  const txRef = useMemo(() => {
-    return `FB${Date.now()}${Math.floor(Math.random() * 1000)}`
-  }, [isOpen])
-
-  const upiId = process.env.NEXT_PUBLIC_UPI_ID || 'farmbid@upi'
+  const upiId = process.env.NEXT_PUBLIC_UPI_ID || 'sachin2844@razorpay'
+  const txRef = useMemo(() => `FB${Date.now()}${Math.floor(Math.random() * 1000)}`, [isOpen])
 
   const methods = [
-    { 
-      id: 'phonepe', 
-      name: 'PhonePe', 
-      isImage: true, 
-      imgSrc: 'https://upload.wikimedia.org/wikipedia/commons/7/71/PhonePe_Logo.svg' 
-    },
-    { 
-      id: 'gpay', 
-      name: 'Google Pay', 
-      isImage: true, 
-      imgSrc: 'https://pay.google.com/about/static_kcs/images/logos/google-pay-logo.png' 
-    },
-    { 
-      id: 'razorpay', 
-      name: 'Razorpay', 
-      isImage: true, 
-      imgSrc: 'https://razorpay.com/assets/razorpay-logo.svg' 
-    },
-    { 
-      id: 'card', 
-      name: 'CreditCard', 
-      icon: <CreditCard className="h-6 w-6" />,
-      isImage: false
-    },
+    { id: 'phonepe', name: 'PhonePe', isImage: true, imgSrc: 'https://upload.wikimedia.org/wikipedia/commons/7/71/PhonePe_Logo.svg' },
+    { id: 'gpay', name: 'Google Pay', isImage: true, imgSrc: 'https://pay.google.com/about/static_kcs/images/logos/google-pay-logo.png' },
+    { id: 'razorpay', name: 'Razorpay', isImage: true, imgSrc: 'https://razorpay.com/assets/razorpay-logo.svg' },
+    { id: 'card', name: 'Credit Card', icon: <CreditCard className="h-6 w-6" />, isImage: false },
   ]
 
-  const generateUpiUri = (amount, method) => {
-    const base = `upi://pay?pa=${upiId}&pn=FarmBid&am=${amount}&cu=INR&tn=FarmBid_Ref_${txRef}`
-    if (method === 'phonepe') return `phonepe://pay?pa=${upiId}&pn=FarmBid&am=${amount}&cu=INR&tn=FarmBid_Ref_${txRef}`
-    if (method === 'gpay') return `tez://upi/pay?pa=${upiId}&pn=FarmBid&am=${amount}&cu=INR&tn=FarmBid_Ref_${txRef}`
-    return base
-  }
+  const generateUpiUri = (amount) => {
+    // If the configured ID is actually a full payment link (like Razorpay.me), use it dynamically
+    if (upiId && upiId.startsWith('http')) {
+      return `${upiId}?amount=${amount}`;
+    }
 
-  const handleRazorpay = () => {
-    // Redirect to the custom Razorpay payment page
-    window.open('https://razorpay.me/@sachin2844', '_blank')
-    
-    // For demo purposes, we'll still trigger a "I have paid" flow or processing after they return
-    toast.info('Opening Razorpay Payment Page...')
-    setPaymentPhase('processing')
-    setTimeout(() => {
-        onConfirm('razorpay')
-        onClose()
-    }, 15000) // Delay to simulate payment completion
+    const formattedAmount = Number(amount).toFixed(2);
+    const payeeName = encodeURIComponent('FarmBid');
+    const transactionNote = encodeURIComponent(`Deposit_${txRef.slice(-6)}`);
+
+    const params = [
+      `pa=${upiId}`,
+      `pn=${payeeName}`,
+      `am=${formattedAmount}`,
+      `cu=INR`,
+      `tn=${transactionNote}`
+    ].join('&');
+
+    // QR Codes strictly require the standard upi:// scheme to be decodable by phone scanners.
+    return `upi://pay?${params}`;
+  };
+
+  const handleRazorpay = async () => {
+    if (!amount || amount <= 0) return toast.error('Please enter a valid amount');
+    setIsVerifying(true);
+    try {
+      const res = await fetch(`${API_URL}/payments/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, userId })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setIsVerifying(false);
+        console.error('Razorpay initiation failed:', data);
+        return toast.error(`Initiation failed: ${data.message || data.error || 'Server error'}`);
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        const rzp = new window.Razorpay({
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SZlp7uSKnjrnRE',
+          amount: amount * 100,
+          currency: 'INR',
+          name: 'FarmBid',
+          description: `Wallet Top-up: ₹${amount}`,
+          order_id: data.orderId,
+          handler: async (resp) => {
+            try {
+              const vres = await fetch(`${API_URL}/payments/verify-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                  userId, 
+                  amount, 
+                  razorpay_order_id: resp.razorpay_order_id, 
+                  razorpay_payment_id: resp.razorpay_payment_id, 
+                  razorpay_signature: resp.razorpay_signature 
+                })
+              });
+              const vdata = await vres.json();
+              if (vdata.success) {
+                toast.success('Payment Verified & Wallet Updated!');
+                onConfirm(vdata.balance);
+                onClose();
+              } else {
+                toast.error('Verification failed: ' + (vdata.message || 'Unknown error'));
+              }
+            } catch (e) {
+              toast.error('Server connection error during verification.');
+            } finally {
+              setIsVerifying(false);
+            }
+          },
+          modal: { ondismiss: () => setIsVerifying(false) },
+          prefill: { name: 'User' },
+          theme: { color: '#16a34a' }
+        });
+        rzp.open();
+      };
+      document.body.appendChild(script);
+    } catch (e) {
+      toast.error('Error starting payment process.');
+      setIsVerifying(false);
+    }
   }
 
   const handlePayClick = () => {
-    if (method === 'razorpay') {
-      handleRazorpay()
-      return
-    }
-
-    if (method === 'card') {
-      onConfirm('card', txRef)
-      onClose()
-      return
-    }
-
-    const uri = generateUpiUri(amount, method)
-    setUpiUri(uri)
-
+    if (isVerifying) return;
+    
+    // Cards and Razorpay use the official SDK portal for real payments
+    if (method === 'card' || method === 'razorpay') return handleRazorpay();
+    
+    // For PhonePe and Google Pay, we show the Scanner (QR Code)
+    const uri = generateUpiUri(amount, method);
+    setUpiUri(uri);
+    
     if (isMobile) {
-      // Redirect to app
-      window.location.href = uri
-      // After some delay, assume success for demo purposes
-      setTimeout(() => {
-        setPaymentPhase('processing')
-        setTimeout(() => {
-          onConfirm(method, txRef)
-          onClose()
-        }, 2000)
-      }, 2000)
+      window.location.href = uri;
+      setPaymentPhase('processing');
     } else {
-      // Show Scanner
-      setPaymentPhase('scanner')
+      setPaymentPhase('scanner');
     }
   }
 
   const handleReset = () => {
-    setPaymentPhase('select')
-    setUpiUri('')
+    if (isVerifying) return;
+    setPaymentPhase('select');
+    setUpiUri('');
+  }
+
+  const handleManualConfirm = async () => {
+    setIsVerifying(true);
+    // For demo purposes, we allow manual confirmation for Simulated UPI options
+    try {
+      const response = await fetch(`${API_URL}/wallet/topup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          amount,
+          paymentMethod: method,
+          referenceId: txRef
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`Success! Added ${formatINR(amount)} via ${method}`);
+        onConfirm(data.newBalance);
+        onClose();
+      } else {
+        toast.error('Failed to update wallet balance');
+      }
+    } catch (e) {
+      toast.error('Connection error');
+    } finally {
+      setIsVerifying(false);
+    }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        handleReset()
-        onClose()
-      }
-    }}>
+    <Dialog open={isOpen} onOpenChange={(v) => !v && !isVerifying && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{paymentPhase === 'scanner' ? 'Scan to Pay' : 'Complete Payment'}</DialogTitle>
+          <DialogTitle>
+            {isVerifying ? 'Secure Payment' : paymentPhase === 'scanner' ? 'Scan to Pay' : 'Add Funds to Wallet'}
+          </DialogTitle>
           <DialogDescription>
-            {paymentPhase === 'scanner' 
-              ? `Scan this QR code with any UPI app to pay ${formatINR(amount || 0)}`
-              : `Select a payment method to add ${formatINR(amount || 0)} to your wallet.`
+            {isVerifying 
+              ? 'Please wait while we confirm your transaction...' 
+              : paymentPhase === 'scanner'
+                ? `Scan this QR with any UPI app to pay ${formatINR(amount || 0)}`
+                : `Select a payment method to add ${formatINR(amount || 0)} to your wallet.`
             }
           </DialogDescription>
         </DialogHeader>
@@ -721,41 +736,31 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm }) => {
           {paymentPhase === 'select' && (
             <div className="grid grid-cols-2 gap-4">
               {methods.map((m) => (
-                <div
-                  key={m.id}
-                  className={`flex flex-col items-center justify-center p-4 border rounded-lg cursor-pointer transition-all ${
-                    method === m.id ? 'border-primary bg-primary/10 ring-2 ring-primary/20' : 'hover:bg-muted'
-                  }`}
+                <div 
+                  key={m.id} 
+                  className={`flex flex-col items-center justify-center p-4 border rounded-xl cursor-pointer transition-all ${method === m.id ? 'border-primary bg-primary/10 ring-2 ring-primary/20' : 'hover:bg-muted'}`} 
                   onClick={() => setMethod(m.id)}
                 >
-                  <div className="h-10 flex items-center justify-center mb-1 text-primary">
-                    {m.isImage ? (
-                      <img src={m.imgSrc} alt={m.name} className="max-h-8 max-w-[100px] object-contain" />
-                    ) : (
-                      m.icon
-                    )}
+                  <div className="h-10 flex items-center justify-center mb-2 text-primary">
+                    {m.isImage ? <img src={m.imgSrc} alt={m.name} className="max-h-8 max-w-[100px] object-contain" /> : m.icon}
                   </div>
-                  <div className="font-medium text-sm text-center">{m.name}</div>
+                  <div className="font-semibold text-sm text-center">{m.name}</div>
                 </div>
               ))}
             </div>
           )}
 
           {paymentPhase === 'scanner' && (
-            <div className="flex flex-col items-center justify-center space-y-6 py-4">
+            <div className="flex flex-col items-center justify-center space-y-4 py-4">
               <div className="bg-white p-4 rounded-xl shadow-lg border-2 border-primary/20">
-                <QRCodeSVG value={upiUri} size={200} level="H" />
+                <QRCodeSVG value={upiUri} size={256} level="H" includeMargin={true} />
               </div>
-              <div className="text-center space-y-2">
-                <p className="font-semibold text-lg">{methods.find(m => m.id === method)?.name} UPI</p>
-                <p className="text-xs text-muted-foreground bg-muted p-2 rounded truncate max-w-[250px]">
-                  {upiId}
-                </p>
+              <div className="flex flex-col items-center gap-2">
+                <Badge variant="outline" className="animate-pulse">
+                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                  Waiting for payment...
+                </Badge>
               </div>
-              <Badge variant="outline" className="animate-pulse">
-                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                Waiting for payment...
-              </Badge>
             </div>
           )}
 
@@ -765,43 +770,23 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm }) => {
               <p className="font-medium">Processing your transaction...</p>
             </div>
           )}
-
-          {method === 'card' && paymentPhase === 'select' && (
-            <div className="space-y-3 mt-4 p-4 border rounded-lg bg-muted/30">
-              <div className="space-y-1">
-                <Label>Card Number</Label>
-                <Input placeholder="0000 0000 0000 0000" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label>Expiry</Label>
-                  <Input placeholder="MM/YY" />
-                </div>
-                <div className="space-y-1">
-                  <Label>CVV</Label>
-                  <Input placeholder="123" />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        <DialogFooter className="sm:justify-between">
+        <DialogFooter className="sm:justify-between gap-3">
           {paymentPhase === 'scanner' ? (
             <>
-              <Button variant="ghost" onClick={handleReset}>Back</Button>
-              <Button onClick={() => {
-                onConfirm(method, txRef)
-                onClose()
-              }}>
+              <Button variant="ghost" onClick={handleReset} disabled={isVerifying}>Back</Button>
+              <Button onClick={handleManualConfirm} disabled={isVerifying} className="gap-2">
+                <Check className="h-4 w-4" />
                 I have paid
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={handlePayClick}>
-                {method === 'razorpay' ? 'Continue to Razorpay' : `Pay ${formatINR(amount || 0)}`}
+              <Button variant="outline" onClick={onClose} disabled={isVerifying} className="flex-1">Cancel</Button>
+              <Button onClick={handlePayClick} disabled={isVerifying} className="flex-1 gap-2">
+                {isVerifying ? <RefreshCw className="h-4 w-4 animate-spin" /> : method === 'razorpay' || method === 'card' ? <Shield className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                {isVerifying ? 'Verifying...' : 'Continue'}
               </Button>
             </>
           )}
@@ -810,6 +795,7 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm }) => {
     </Dialog>
   )
 }
+
 
 // Main App Component
 export default function App() {
@@ -1040,7 +1026,6 @@ export default function App() {
   const handleTopupClick = () => {
     if (!isAuthenticated || !currentUser) {
       toast.error('Please login to top up wallet');
-      // If we use Next router, it would be router.push. Fallback to location:
       window.location.href = '/login';
       return;
     }
@@ -1049,43 +1034,22 @@ export default function App() {
       toast.error('Please enter a valid amount')
       return
     }
+    
+    // Open the secure Razorpay Payment Dialog
     setPaymentDialogOpen(true)
   }
 
-  const handlePaymentConfirm = async (method, referenceId) => {
-    setPaymentDialogOpen(false)
-    setTopupLoading(true)
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('farmbid_token');
-      const response = await fetch(`${API_URL}/wallet/topup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          userId: currentUser.id,
-          amount: parseFloat(topupAmount),
-          paymentMethod: method,
-          referenceId: referenceId
-        })
-      })
-      const data = await response.json()
-      if (data.success) {
-        setWalletBalance(prev => prev + parseFloat(topupAmount))
-        setTopupAmount('')
-        toast.success('Wallet topped up successfully!', {
-          description: `₹${topupAmount} has been added via ${method}.`
-        })
-      } else {
-        toast.error(data.error || 'Topup failed')
-      }
-    } catch (error) {
-      toast.error('Connection error')
-    } finally {
-      setTopupLoading(false)
+  const handlePaymentConfirm = async (newBalance) => {
+    // Razorpay verification already happened in the PaymentDialog.
+    // We just update the state with the verified balance returned from backend.
+    if (newBalance !== undefined && typeof newBalance === 'number') {
+      setWalletBalance(newBalance);
+    } else {
+      await fetchData(); // Fallback to full refresh
     }
+    
+    setTopupAmount('');
+    setPaymentDialogOpen(false);
   }
 
   const handleEscrowLock = async (orderId, farmerAddress, amount) => {
@@ -1728,7 +1692,7 @@ export default function App() {
                     </CardHeader>
                     <CardContent>
                       <div className="overflow-x-auto text-center py-8">
-                        <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">📊</div>
+                        <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">ðŸ“Š</div>
                         <p className="text-muted-foreground font-medium">No activity to display</p>
                         <p className="text-sm text-muted-foreground opacity-70">Farmer details will populate here once active.</p>
                       </div>
@@ -1756,7 +1720,7 @@ export default function App() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3 text-center py-8">
-                          <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">✅</div>
+                          <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">âœ…</div>
                           <p className="text-muted-foreground font-medium">No actions required</p>
                           <p className="text-sm text-muted-foreground opacity-70">You have 0 disputes and 0 pending verifications.</p>
                         </div>
@@ -1842,7 +1806,7 @@ export default function App() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3 text-center py-8">
-                          <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">📭</div>
+                          <Receipt className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-20 hover:opacity-40 transition-opacity" />
                           <p className="text-muted-foreground font-medium">No recent transactions</p>
                           <p className="text-sm text-muted-foreground opacity-70">Your payment and top-up history will appear here.</p>
                         </div>
@@ -1873,7 +1837,7 @@ export default function App() {
                     <TabsContent value="active" className="mt-4">
                       <Card>
                         <CardContent className="flex flex-col items-center justify-center py-12">
-                          <div className="text-5xl mb-3 opacity-20">📦</div>
+                          <Package className="h-12 w-12 text-muted-foreground opacity-20 mb-3" />
                           <p className="font-medium">No active orders</p>
                           <p className="text-sm text-muted-foreground">When you win an auction, your active order will appear here.</p>
                         </CardContent>
@@ -1883,7 +1847,7 @@ export default function App() {
                     <TabsContent value="completed" className="mt-4">
                       <Card>
                         <CardContent className="flex flex-col items-center justify-center py-12">
-                          <div className="text-5xl mb-3 opacity-20">✅</div>
+                          <CheckCircle2 className="h-12 w-12 text-muted-foreground opacity-20 mb-3" />
                           <p className="font-medium">No completed orders yet</p>
                           <p className="text-sm text-muted-foreground">Your successfully settled orders will be recorded here.</p>
                         </CardContent>
@@ -1893,7 +1857,7 @@ export default function App() {
                     <TabsContent value="disputed" className="mt-4">
                       <Card>
                         <CardContent className="flex flex-col items-center justify-center py-12">
-                          <div className="text-5xl mb-3 opacity-20">👍</div>
+                          <AlertTriangle className="h-12 w-12 text-muted-foreground opacity-20 mb-3" />
                           <p className="font-medium">No disputed orders</p>
                           <p className="text-sm text-muted-foreground">You don't have any orders currently under dispute.</p>
                         </CardContent>
@@ -1916,7 +1880,7 @@ export default function App() {
 
                   <Card>
                     <CardContent className="flex flex-col items-center justify-center py-16">
-                      <div className="text-6xl mb-4 opacity-20 hover:opacity-40 transition-opacity">🤝</div>
+                      <Handshake className="h-16 w-16 text-muted-foreground opacity-20 mb-4" />
                       <h3 className="text-xl font-semibold mb-2">No Active Disputes</h3>
                       <p className="text-muted-foreground text-center max-w-sm">
                         You're all caught up! There are no orders requiring dispute resolution or mediation at this time.
@@ -1940,7 +1904,7 @@ export default function App() {
                   <Card>
                     <CardContent className="py-12">
                       <div className="text-center">
-                        <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">🧑‍🌾</div>
+                        <Users className="h-12 w-12 text-muted-foreground opacity-20 mx-auto mb-3" />
                         <h3 className="text-xl font-semibold mb-2">No Registered Farmers</h3>
                         <p className="text-muted-foreground">
                           There are currently no farmers registered on the platform. 
@@ -1986,7 +1950,7 @@ export default function App() {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="text-center py-8">
-                          <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">✅</div>
+                          <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">âœ…</div>
                           <p className="text-muted-foreground font-medium">No active alerts</p>
                           <p className="text-sm text-muted-foreground opacity-70">Fraud monitoring is active and clear.</p>
                         </div>
@@ -2039,8 +2003,10 @@ export default function App() {
         <PaymentDialog
           isOpen={paymentDialogOpen}
           onClose={() => setPaymentDialogOpen(false)}
-          amount={topupAmount}
+          amount={parseFloat(topupAmount)}
           onConfirm={handlePaymentConfirm}
+          userId={currentUser?.id}
+          initialPhase="scanner"
         />
       </div>
     </TooltipProvider>

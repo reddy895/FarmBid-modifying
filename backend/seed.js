@@ -604,7 +604,7 @@ const seedDatabase = async () => {
           password: hashedDemoBuyerPassword,
           isDemo: true,
           role: 'buyer',
-          walletBalance: 250000,
+          walletBalance: 0,
           code: 'B001',
           name: 'Bengaluru Fresh Foods Pvt Ltd',
           phone: '+91 80 2345 6789',
