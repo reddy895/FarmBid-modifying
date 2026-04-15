@@ -1331,12 +1331,12 @@ export default function App() {
                         </div>
                         <Separator orientation="vertical" className="h-12" />
                         <div className="text-center">
-                          <p className="text-3xl font-bold">58,234,600</p>
+                          <p className="text-3xl font-bold text-muted-foreground">0</p>
                           <p className="text-sm text-muted-foreground">Latest Block</p>
                         </div>
                         <Separator orientation="vertical" className="h-12" />
                         <div className="text-center">
-                          <p className="text-3xl font-bold text-green-500">100%</p>
+                          <p className="text-3xl font-bold text-muted-foreground">0%</p>
                           <p className="text-sm text-muted-foreground">Verification Rate</p>
                         </div>
                       </div>
