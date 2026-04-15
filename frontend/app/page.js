@@ -1586,17 +1586,17 @@ export default function App() {
 
                   {/* KPI Grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <KPICard title="Total GMV" value="₹42.85L" icon={IndianRupee} trend="+12.5% this week" trendUp />
-                    <KPICard title="Active Farmers" value="247" icon={Users} trend="+18 this week" trendUp />
-                    <KPICard title="Active Auctions" value="28" icon={Gavel} />
-                    <KPICard title="Success Rate" value="94.5%" icon={CheckCircle2} trend="+2.1%" trendUp />
+                    <KPICard title="Total GMV" value="₹0" icon={IndianRupee} trend="+0% this week" trendUp />
+                    <KPICard title="Active Farmers" value="0" icon={Users} trend="+0 this week" trendUp />
+                    <KPICard title="Active Auctions" value="0" icon={Gavel} />
+                    <KPICard title="Success Rate" value="0%" icon={CheckCircle2} trend="+0%" trendUp />
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <KPICard title="Avg Quality Index" value="84" icon={Sparkles} />
-                    <KPICard title="Avg Settlement" value="4.2 hrs" icon={Clock} trend="-0.5 hrs" trendUp />
-                    <KPICard title="Dispute Rate" value="3.2%" icon={AlertTriangle} trend="-0.8%" trendUp />
-                    <KPICard title="Fraud Flags Today" value="2" icon={Shield} />
+                    <KPICard title="Avg Quality Index" value="0" icon={Sparkles} />
+                    <KPICard title="Avg Settlement" value="0 hrs" icon={Clock} trend="-0 hrs" trendUp />
+                    <KPICard title="Dispute Rate" value="0%" icon={AlertTriangle} trend="-0%" trendUp />
+                    <KPICard title="Fraud Flags Today" value="0" icon={Shield} />
                   </div>
 
                   {/* District Table */}
@@ -1605,34 +1605,10 @@ export default function App() {
                       <CardTitle>District-wise Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left py-3 px-4 font-medium">District</th>
-                              <th className="text-right py-3 px-4 font-medium">Farmers</th>
-                              <th className="text-right py-3 px-4 font-medium">Listings</th>
-                              <th className="text-right py-3 px-4 font-medium">GMV</th>
-                              <th className="text-left py-3 px-4 font-medium">Top Crop</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[
-                              { district: 'Kolar', farmers: 156, listings: 312, gmv: 2450000, topCrop: 'Tomatoes' },
-                              { district: 'Bengaluru Rural', farmers: 45, listings: 98, gmv: 980000, topCrop: 'Chilies' },
-                              { district: 'Chikkaballapur', farmers: 28, listings: 54, gmv: 520000, topCrop: 'Grapes' },
-                              { district: 'Ramanagara', farmers: 18, listings: 32, gmv: 335000, topCrop: 'Potatoes' }
-                            ].map((row, i) => (
-                              <tr key={i} className="border-b last:border-0">
-                                <td className="py-3 px-4 font-medium">{row.district}</td>
-                                <td className="py-3 px-4 text-right">{row.farmers}</td>
-                                <td className="py-3 px-4 text-right">{row.listings}</td>
-                                <td className="py-3 px-4 text-right">{formatINR(row.gmv)}</td>
-                                <td className="py-3 px-4">{row.topCrop}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      <div className="overflow-x-auto text-center py-8">
+                        <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">📊</div>
+                        <p className="text-muted-foreground font-medium">No activity to display</p>
+                        <p className="text-sm text-muted-foreground opacity-70">Farmer details will populate here once active.</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -1919,42 +1895,18 @@ export default function App() {
                 >
                   <h1 className="text-2xl font-bold">Registered Farmers</h1>
 
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[
-                      { id: 'f1', code: 'KA-KOL-001', name: 'Ramappa Gowda', village: 'Srinivaspur', district: 'Kolar', trustScore: 95, listings: 47, verified: true },
-                      { id: 'f2', code: 'KA-KOL-002', name: 'Lakshmi Devi', village: 'Bangarpet', district: 'Kolar', trustScore: 88, listings: 23, verified: true },
-                      { id: 'f3', code: 'KA-KOL-003', name: 'Venkatesh Naidu', village: 'Mulbagal', district: 'Kolar', trustScore: 72, listings: 12, verified: false },
-                      { id: 'f4', code: 'KA-BLR-001', name: 'Manjunath Kumar', village: 'Anekal', district: 'Bengaluru Rural', trustScore: 100, listings: 65, verified: true }
-                    ].map(farmer => (
-                      <Card key={farmer.id}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between mb-4">
-                            <Avatar className="h-12 w-12">
-                              <AvatarFallback>{farmer.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                            </Avatar>
-                            <TrustBadge score={farmer.trustScore} />
-                          </div>
-                          <h3 className="font-semibold">{farmer.name}</h3>
-                          <p className="text-sm text-muted-foreground">{farmer.code}</p>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                            <MapPin className="h-3 w-3" />
-                            {farmer.village}, {farmer.district}
-                          </div>
-                          <div className="flex items-center gap-4 mt-4 pt-4 border-t">
-                            <div className="text-center">
-                              <p className="text-lg font-bold">{farmer.listings}</p>
-                              <p className="text-xs text-muted-foreground">Listings</p>
-                            </div>
-                            <div className="text-center">
-                              <Badge variant={farmer.verified ? 'default' : 'secondary'}>
-                                {farmer.verified ? 'Verified' : 'Pending'}
-                              </Badge>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                  <Card>
+                    <CardContent className="py-12">
+                      <div className="text-center">
+                        <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">🧑‍🌾</div>
+                        <h3 className="text-xl font-semibold mb-2">No Registered Farmers</h3>
+                        <p className="text-muted-foreground">
+                          There are currently no farmers registered on the platform. 
+                          Farmer profiles and details will appear here once they complete the onboarding process.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               )}
 
@@ -1972,47 +1924,29 @@ export default function App() {
                       <h1 className="text-2xl font-bold">Fraud Monitoring</h1>
                       <p className="text-muted-foreground">Real-time fraud detection and prevention</p>
                     </div>
-                    <Badge variant="destructive">2 Active Alerts</Badge>
+                    <Badge variant="outline">0 Active Alerts</Badge>
                   </div>
 
                   <div className="grid md:grid-cols-4 gap-4">
-                    <KPICard title="Weight Mismatches" value="3" icon={Scale} trend="This week" />
-                    <KPICard title="Suspicious Patterns" value="2" icon={AlertTriangle} />
-                    <KPICard title="Blocked Accounts" value="1" icon={Shield} />
-                    <KPICard title="Trust Score Drops" value="5" icon={TrendingUp} trend="more than 10 points" />
+                    <KPICard title="Weight Mismatches" value="0" icon={Scale} trend="This week" />
+                    <KPICard title="Suspicious Patterns" value="0" icon={AlertTriangle} />
+                    <KPICard title="Blocked Accounts" value="0" icon={Shield} />
+                    <KPICard title="Trust Score Drops" value="0" icon={TrendingUp} trend="more than 10 points" />
                   </div>
 
                   <div className="grid lg:grid-cols-2 gap-6">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-red-500 flex items-center gap-2">
-                          <AlertTriangle className="h-5 w-5" />
+                        <CardTitle className="text-muted-foreground flex items-center gap-2">
+                          <CheckCircle2 className="h-5 w-5" />
                           Active Alerts
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-900">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <Badge variant="destructive">High Severity</Badge>
-                              <h4 className="font-semibold mt-2">Weight Discrepancy - 8%</h4>
-                              <p className="text-sm text-muted-foreground">Farmer KA-BLR-001</p>
-                              <p className="text-xs text-muted-foreground mt-1">Detected: Jun 24, 2025</p>
-                            </div>
-                            <Button size="sm" variant="destructive">Investigate</Button>
-                          </div>
-                        </div>
-
-                        <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <Badge variant="outline" className="border-amber-500 text-amber-600">Medium</Badge>
-                              <h4 className="font-semibold mt-2">Suspicious Bidding Pattern</h4>
-                              <p className="text-sm text-muted-foreground">Buyer b2 → Farmer f3</p>
-                              <p className="text-xs text-muted-foreground mt-1">Same buyer winning over 80% auctions</p>
-                            </div>
-                            <Button size="sm" variant="outline">Review</Button>
-                          </div>
+                        <div className="text-center py-8">
+                          <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">✅</div>
+                          <p className="text-muted-foreground font-medium">No active alerts</p>
+                          <p className="text-sm text-muted-foreground opacity-70">Fraud monitoring is active and clear.</p>
                         </div>
                       </CardContent>
                     </Card>
