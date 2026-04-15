@@ -40,47 +40,51 @@ import {
 // WhatsApp demo messages
 const whatsappMessages = {
   english: [
-    { type: 'bot', text: 'Welcome to FarmBid! I am your assistant. How can I help you today?' },
-    { type: 'bot', text: 'Reply with:\n1. Create new listing\n2. Check my listings\n3. View earnings\n4. Help' },
-    { type: 'user', text: '1' },
-    { type: 'bot', text: "Great! Let's create a new listing. Please send a photo of your produce." },
-    { type: 'user', text: '[Photo of tomatoes]', isImage: true },
-    { type: 'bot', text: 'Tomatoes! Quality looks Premium grade.\n\nWhat is the total weight (in kg)?' },
-    { type: 'user', text: '500 kg' },
-    { type: 'bot', text: 'Got it! 500 kg of Tomatoes.\n\nWhat is your minimum price per kg? (Current market: ₹30-40/kg)' },
-    { type: 'user', text: '32' },
-    { type: 'bot', text: 'Perfect! ₹32 per kg minimum.\n\nWhen was this harvested? (DD/MM or today)' },
-    { type: 'user', text: 'today' },
-    { type: 'bot', text: 'Your listing is being processed...\n\nSummary:\n- Tomatoes: 500 kg\n- Min Price: ₹32/kg\n- Total Value: ₹16,000+\n- Srinivaspur, Kolar\n\nAnchoring to blockchain...' },
-    { type: 'bot', text: 'Listing is LIVE!\n\nAuction ID: #KOL-2025-0628\nEnds in: 24 hours\n\nYou will receive updates when buyers bid.\n\nChain Hash: 0x8f9a...8f9a' }
+    { type: 'bot', text: 'Welcome to FarmBid! Please select your language / ದಯವಿಟ್ಟು ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ / कृपया अपनी भाषा चुनें' },
+    { type: 'bot', text: 'Choose Language:', isInteractive: true, options: ['🌐 English', 'ಕನ್ನಡ (Kannada)', 'हिंदी (Hindi)'] },
+    { type: 'user', text: 'English' },
+    { type: 'bot', text: "Great! Let's create a new listing. What type of crop do you want to list?" },
+    { type: 'bot', text: 'Select Crop:', isInteractive: true, options: ['🍅 Tomatoes', '🧅 Onions', '🌾 Wheat'] },
+    { type: 'user', text: '🍅 Tomatoes' },
+    { type: 'bot', text: 'Tomatoes selected.\n\nPlease enter your Base Price (minimum expected price) per kg.\n(Type the amount)' },
+    { type: 'user', text: '₹32' },
+    { type: 'bot', text: 'Summary:\n\n🍅 Crop: Tomatoes\n💰 Base Price: ₹32/kg\n\nConfirm listing?' },
+    { type: 'bot', text: 'Confirm:', isInteractive: true, options: ['✅ Yes, list it', '❌ Cancel'] },
+    { type: 'user', text: '✅ Yes, list it' },
+    { type: 'bot', text: 'Listing is LIVE!\n\nAuction ID: #KOL-2025\nEnds in: 24 hours\n\nYou will receive updates when buyers bid.' }
   ],
   hindi: [
-    { type: 'bot', text: 'FarmBid में आपका स्वागत है! मैं आपका सहायक हूं। आज मैं आपकी कैसे मदद कर सकता हूं?' },
-    { type: 'bot', text: 'जवाब दें:\n1. नई लिस्टिंग बनाएं\n2. मेरी लिस्टिंग देखें\n3. कमाई देखें\n4. मदद' },
-    { type: 'user', text: '1' },
-    { type: 'bot', text: "बहुत अच्छा! चलिए एक नई लिस्टिंग बनाते हैं। कृपया अपनी उपज की एक फोटो भेजें।" },
-    { type: 'user', text: '[टमाटर की फोटो]', isImage: true },
-    { type: 'bot', text: 'टमाटर! गुणवत्ता प्रीमियम स्तर की लग रही है।\n\nकुल वजन (किलोग्राम में) क्या है?' },
-    { type: 'user', text: '500 kg' },
-    { type: 'bot', text: 'समझ गया! 500 किलो टमाटर।\n\nप्रति किलो आपकी न्यूनतम कीमत क्या है? (वर्तमान बाजार: ₹30-40/kg)' },
-    { type: 'user', text: '32' },
-    { type: 'bot', text: 'बेहतरीन! ₹32 प्रति किलो न्यूनतम।\n\nइसकी कटाई कब हुई थी? (DD/MM या आज)' },
-    { type: 'user', text: 'आज' },
-    { type: 'bot', text: 'आपकी लिस्टिंग प्रोसेस की जा रही है...\n\nसारांश:\n- टमाटर: 500 kg\n- न्यूनतम मूल्य: ₹32/kg\n- कुल मूल्य: ₹16,000+\n- श्रीनिवासपुर, कोलार\n\nब्लॉकचेन पर एंकरिंग की जा रही है...' },
-    { type: 'bot', text: 'लिस्टिंग लाइव है!\n\nनीलामी ID: #KOL-2025-0628\nसमाप्ति: 24 घंटे में\n\nखरीदारों के बोली लगाने पर आपको अपडेट मिलते रहेंगे।\n\nचेन हैश: 0x8f9a...8f9a' }
+    { type: 'bot', text: 'Welcome to FarmBid! Please select your language / ದಯವಿಟ್ಟು ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ / कृपया अपनी भाषा चुनें' },
+    { type: 'bot', text: 'Choose Language:', isInteractive: true, options: ['English', 'ಕನ್ನಡ (Kannada)', '🌐 हिंदी (Hindi)'] },
+    { type: 'user', text: 'हिंदी (Hindi)' },
+    { type: 'bot', text: "बढ़िया! आइए एक नई लिस्टिंग बनाएं। आप किस प्रकार की फसल बेचना चाहते हैं?" },
+    { type: 'bot', text: 'फसल चुनें:', isInteractive: true, options: ['🍅 टमाटर', '🧅 प्याज', '🌾 गेहूं'] },
+    { type: 'user', text: '🍅 टमाटर' },
+    { type: 'bot', text: 'टमाटर चुना गया।\n\nकृपया अपना आधार मूल्य (न्यूनतम अपेक्षित मूल्य) प्रति किलो दर्ज करें।\n(राशि टाइप करें)' },
+    { type: 'user', text: '₹32' },
+    { type: 'bot', text: 'सारांश:\n\n🍅 फसल: टमाटर\n💰 आधार मूल्य: ₹32/kg\n\nक्या आप लिस्टिंग की पुष्टि करते हैं?' },
+    { type: 'bot', text: 'पुष्टि करें:', isInteractive: true, options: ['✅ हाँ, लिस्ट करें', '❌ रद्द करें'] },
+    { type: 'user', text: '✅ हाँ, लिस्ट करें' },
+    { type: 'bot', text: 'लिस्टिंग लाइव है!\n\nनीलामी ID: #KOL-2025\n24 घंटे में समाप्त\n\nखरीदारों के बोली लगाने पर आपको अपडेट मिलेंगे।' }
   ],
   kannada: [
-    { type: 'bot', text: 'FarmBid à²—à³† à²¸à³à²µà²¾à²—à²¤! à²¨à²¾à²¨à³ à²¨à²¿à²®à³à²® à²¸à²¹à²¾à²¯à²•. à²‡à²‚à²¦à³ à²¨à²¾à²¨à³ à²¨à²¿à²®à²—à³† à²¹à³‡à²—à³† à²¸à²¹à²¾à²¯ à²®à²¾à²¡à²¬à²¹à³à²¦à³?' },
-    { type: 'bot', text: 'à²‰à²¤à³à²¤à²°à²¿à²¸à²¿:\n1ï¸âƒ£ à²¹à³Šà²¸ à²ªà²Ÿà³à²Ÿà²¿ à²°à²šà²¿à²¸à²¿\n2ï¸âƒ£ à²¨à²¨à³à²¨ à²ªà²Ÿà³à²Ÿà²¿à²—à²³à²¨à³à²¨à³ à²¨à³‹à²¡à²¿\n3ï¸âƒ£ à²—à²³à²¿à²•à³† à²¨à³‹à²¡à²¿\n4ï¸âƒ£ à²¸à²¹à²¾à²¯' },
-    { type: 'user', text: '1' },
-    { type: 'bot', text: 'à²…à²¦à³à²­à³à²¤! à²¹à³Šà²¸ à²ªà²Ÿà³à²Ÿà²¿ à²®à²¾à²¡à³‹à²£. à²¦à²¯à²µà²¿à²Ÿà³à²Ÿà³ à²¨à²¿à²®à³à²® à²‰à²¤à³à²ªà²¨à³à²¨à²¦ à²«à³‹à²Ÿà³‹ à²•à²³à²¿à²¸à²¿.' },
-    { type: 'user', text: '[à²Ÿà³Šà²®à³†à²Ÿà³Š à²«à³‹à²Ÿà³‹]', isImage: true },
-    { type: 'bot', text: 'ðŸ… à²¤à²¾à²œà²¾ à²Ÿà³Šà²®à³†à²Ÿà³Š à²•à²¾à²£à²¿à²¸à³à²¤à³à²¤à²¿à²¦à³†! à²—à³à²£à²®à²Ÿà³à²Ÿ à²ªà³à²°à³€à²®à²¿à²¯à²‚ à²†à²—à²¿à²¦à³†.\n\nà²’à²Ÿà³à²Ÿà³ à²¤à³‚à²• à²Žà²·à³à²Ÿà³ (à²•à³†à²œà²¿à²¯à²²à³à²²à²¿)?' }
+    { type: 'bot', text: 'Welcome to FarmBid! Please select your language / ದಯವಿಟ್ಟು ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ / कृपया अपनी भाषा चुनें' },
+    { type: 'bot', text: 'Choose Language:', isInteractive: true, options: ['English', '🌐 ಕನ್ನಡ (Kannada)', 'हिंदी (Hindi)'] },
+    { type: 'user', text: 'ಕನ್ನಡ (Kannada)' },
+    { type: 'bot', text: "ಉತ್ತಮ! ಹೊಸ ಪಟ್ಟಿಯನ್ನು ರಚಿಸೋಣ. ನೀವು ಯಾವ ರೀತಿಯ ಬೆಳೆಯನ್ನು ಮಾರಾಟ ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?" },
+    { type: 'bot', text: 'ಬೆಳೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ:', isInteractive: true, options: ['🍅 ಟೊಮ್ಯಾಟೊ', '🧅 ಈರುಳ್ಳಿ', '🌾 ಗೋಧಿ'] },
+    { type: 'user', text: '🍅 ಟೊಮ್ಯಾಟೊ' },
+    { type: 'bot', text: 'ಟೊಮ್ಯಾಟೊ ಆಯ್ಕೆ ಮಾಡಲಾಗಿದೆ.\n\nದಯವಿಟ್ಟು ನಿಮ್ಮ ಮೂಲ ಬೆಲೆಯನ್ನು (ಕನಿಷ್ಠ ನಿರೀಕ್ಷಿತ ಬೆಲೆ) ಪ್ರತಿ ಕೆಜಿಗೆ ನಮೂದಿಸಿ.\n(ಮೊತ್ತವನ್ನು ಟೈಪ್ ಮಾಡಿ)' },
+    { type: 'user', text: '₹32' },
+    { type: 'bot', text: 'ಸಾರಾಂಶ:\n\n🍅 ಬೆಳೆ: ಟೊಮ್ಯಾಟೊ\n💰 ಮೂಲ ಬೆಲೆ: ₹32/kg\n\nಪಟ್ಟಿಯನ್ನು ಖಚಿತಪಡಿಸುತ್ತೀರಾ?' },
+    { type: 'bot', text: 'ಖಚಿತಪಡಿಸಿ:', isInteractive: true, options: ['✅ ಹೌದು, ಪಟ್ಟಿ ಮಾಡಿ', '❌ ರದ್ದುಮಾಡಿ'] },
+    { type: 'user', text: '✅ ಹೌದು, ಪಟ್ಟಿ ಮಾಡಿ' },
+    { type: 'bot', text: 'ಪಟ್ಟಿ ಸಕ್ರಿಯವಾಗಿದೆ!\n\nಹರಾಜು ID: #KOL-2025\n24 ಗಂಟೆಗಳಲ್ಲಿ ಕೊನೆಗೊಳ್ಳುತ್ತದೆ\n\nಖರೀದಿದಾರರು ಬಿಡ್ ಮಾಡಿದಾಗ ನಿಮಗೆ ಅಪ್ಡೇಟ್ ಸಿಗುತ್ತದೆ.' }
   ]
 }
 
 // Format time remaining
-const formatTimeRemaining = (ms) => {
+
   if (ms <= 0) return 'Ended'
   const hours = Math.floor(ms / (1000 * 60 * 60))
   const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
@@ -381,6 +385,17 @@ const WhatsAppChat = ({ language }) => {
                     alt="Produce"
                     className="w-48 h-32 object-cover rounded"
                   />
+                ) : msg.isInteractive ? (
+                  <div className="flex flex-col w-full min-w-[200px]">
+                    <p className="text-sm whitespace-pre-line mb-2">{msg.text}</p>
+                    <div className="flex flex-col border-t border-gray-200 dark:border-zinc-700 pt-1">
+                      {msg.options.map((opt, i) => (
+                        <div key={i} className="text-[#00a884] dark:text-[#00a884] font-medium text-sm text-center py-2.5 border-b border-gray-200 dark:border-zinc-700 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition-colors">
+                          {opt}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
                   <p className="text-sm whitespace-pre-line">{msg.text}</p>
                 )}
