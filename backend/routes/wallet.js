@@ -63,7 +63,9 @@ router.post('/topup', authenticateJWT, authorizeRole('buyer'), async (req, res, 
     // Use the authenticated user's ID
     const finalUserId = authUserId;
 
-    if (amount < 2) {
+    const parsedAmount = Number(amount);
+    
+    if (isNaN(parsedAmount) || parsedAmount < 2) {
       return res.status(400).json({
         success: false,
         error: 'Minimum topup amount is 2'
@@ -83,8 +85,9 @@ router.post('/topup', authenticateJWT, authorizeRole('buyer'), async (req, res, 
     }
 
     const balanceBefore = wallet.balance;
-    wallet.balance += amount;
-    wallet.availableBalance += amount;
+    // Add the topup to the existing balance cumulatively
+    wallet.balance += parsedAmount;
+    wallet.availableBalance += parsedAmount;
 
     await wallet.save();
 
@@ -93,7 +96,7 @@ router.post('/topup', authenticateJWT, authorizeRole('buyer'), async (req, res, 
       walletId: wallet._id,
       userId: finalUserId,
       type: 'topup',
-      amount,
+      amount: parsedAmount,
       balanceBefore,
       balanceAfter: wallet.balance,
       description: `Wallet topup via ${paymentMethod}`,
@@ -110,7 +113,7 @@ router.post('/topup', authenticateJWT, authorizeRole('buyer'), async (req, res, 
       await anchorToBlockchain({
         type: 'wallet_topup',
         userId: finalUserId,
-        amount,
+        amount: parsedAmount,
         referenceId: transaction.referenceId
       }, 'wallet_topup');
     } catch (err) {
