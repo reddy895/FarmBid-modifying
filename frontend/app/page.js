@@ -1146,14 +1146,13 @@ export default function App() {
               <NavItem icon={Gavel} label="Live Auctions" view="auctions" badge={listings.length} />
               <NavItem icon={ShoppingCart} label="My Orders" view="orders" />
               <NavItem icon={Wallet} label="Wallet" view="wallet" />
-              <NavItem icon={AlertTriangle} label="Disputes" view="disputes" badge="1" />
+              <NavItem icon={AlertTriangle} label="Disputes" view="disputes" badge="0" />
 
               <Separator className="my-3" />
 
               <p className={`px-3 py-2 text-xs font-semibold text-muted-foreground uppercase ${!sidebarOpen && 'hidden'}`}>
                 Demo Modes
               </p>
-              <NavItem icon={MessageSquare} label="WhatsApp Flow" view="whatsapp" />
               <NavItem icon={Sparkles} label="Quality Lab" view="quality" />
               <NavItem icon={Link2} label="Blockchain Ledger" view="blockchain" />
 
@@ -1299,91 +1298,6 @@ export default function App() {
                       <AuctionCard key={listing.id} listing={listing} onBid={handleBid} />
                     ))}
                   </div>
-                </motion.div>
-              )}
-
-              {/* WhatsApp Demo View */}
-              {currentView === 'whatsapp' && (
-                <motion.div
-                  key="whatsapp"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center max-w-2xl mx-auto mb-8">
-                    <Badge className="mb-4">Farmer Experience</Badge>
-                    <h1 className="text-3xl font-bold mb-3">WhatsApp-First Farmer Interface</h1>
-                    <p className="text-muted-foreground">
-                      Farmers don't need complex apps. They create listings, receive bid updates, and get paid—all through WhatsApp in their local language.
-                    </p>
-                  </div>
-
-                  <div className="flex justify-center gap-4 mb-6">
-                    {['english', 'hindi', 'kannada'].map(lang => (
-                      <Button
-                        key={lang}
-                        variant={whatsappLanguage === lang ? 'default' : 'outline'}
-                        onClick={() => setWhatsappLanguage(lang)}
-                        className="capitalize"
-                      >
-                        {lang}
-                      </Button>
-                    ))}
-                  </div>
-
-                  <div className="max-w-md mx-auto">
-                    <WhatsAppChat language={whatsappLanguage} />
-                  </div>
-
-                  <Card className="max-w-2xl mx-auto mt-8">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-amber-500" />
-                        Key Features for Farmers
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                            <MessageSquare className="h-4 w-4 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Simple Chat Flow</p>
-                            <p className="text-sm text-muted-foreground">No app downloads needed</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                            <Globe className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Local Languages</p>
-                            <p className="text-sm text-muted-foreground">Kannada, Hindi, English</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                            <ImageIcon className="h-4 w-4 text-purple-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Photo-Based Listing</p>
-                            <p className="text-sm text-muted-foreground">AI grades produce automatically</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                            <IndianRupee className="h-4 w-4 text-amber-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Direct UPI Payments</p>
-                            <p className="text-sm text-muted-foreground">No middlemen, instant settlement</p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
                 </motion.div>
               )}
 
