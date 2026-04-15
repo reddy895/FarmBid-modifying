@@ -35,6 +35,9 @@ connectDB().catch(err => {
   console.log('⚠️  Running without MongoDB:', err.message);
 });
 
+// Initialize WhatsApp client
+require('./utils/whatsapp');
+
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }

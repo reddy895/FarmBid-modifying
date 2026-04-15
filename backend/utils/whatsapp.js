@@ -48,7 +48,9 @@ const getWhatsAppId = (phone) => {
   if (!normalized) {
     throw new Error('Invalid phone number for WhatsApp delivery');
   }
-  return `whatsapp:${normalized}`;
+  // whatsapp-web.js expects format: 91XXXXXXXXXX@c.us (without +)
+  const digits = normalized.replace('+', '');
+  return `${digits}@c.us`;
 };
 
 const client = new Client({
@@ -131,8 +133,22 @@ const sendMessage = async ({ to, body }) => {
     throw error;
   }
 
-  const toAddress = to.startsWith('whatsapp:') ? to : getWhatsAppId(to);
-  return client.sendMessage(toAddress, body);
+  const cleanTo = to.replace(/^whatsapp:/, '');
+  const digits = cleanTo.replace('+', '');
+  
+  // Directly use @c.us format which is guaranteed to map correctly
+  // getNumberId may sometimes return an internal @lid (Linked Device ID) that fails silently
+  const toAddress = `${digits}@c.us`;
+  
+  console.log(`[WhatsApp] Attempting to send message to ${toAddress}`);
+  try {
+    const response = await client.sendMessage(toAddress, body);
+    console.log(`[WhatsApp] Message successfully sent to ${toAddress}, ID: ${response?.id?._serialized}`);
+    return response;
+  } catch (err) {
+    console.error(`[WhatsApp] Error sending message to ${toAddress}:`, err);
+    throw err;
+  }
 };
 
 const handleFarmerMessage = async (msg) => {
@@ -259,7 +275,7 @@ client.on('qr', (qr) => {
 });
 
 client.on('ready', () => {
-  clientReady = false;
+  clientReady = true;
   console.log('WhatsApp client is ready.');
 });
 

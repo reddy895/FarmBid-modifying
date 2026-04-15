@@ -84,7 +84,7 @@ const whatsappMessages = {
 }
 
 // Format time remaining
-
+const formatTimeRemaining = (ms) => {
   if (ms <= 0) return 'Ended'
   const hours = Math.floor(ms / (1000 * 60 * 60))
   const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))

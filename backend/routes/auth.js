@@ -167,6 +167,8 @@ router.post('/signup', [
     }
 
     const { email, password, name, role, userType, phone, ...extraData } = req.body;
+    const normalizedPhone = phone ? phone.replace(/\D/g, '') : '';
+    const storedPhone = normalizedPhone ? `+${normalizedPhone}` : '';
     // Support both 'role' and 'userType' from frontend
     const userRole = role || userType;
 
@@ -180,9 +182,13 @@ router.post('/signup', [
     // Check if user already exists
     let existingUser;
     if (userRole === 'buyer') {
-      existingUser = await Buyer.findOne({ email: email.toLowerCase() });
+      existingUser = await Buyer.findOne({
+        $or: [{ email: email.toLowerCase() }, { phone: storedPhone }, { phone: normalizedPhone }]
+      });
     } else if (userRole === 'farmer') {
-      existingUser = await Farmer.findOne({ email: email.toLowerCase() });
+      existingUser = await Farmer.findOne({
+        $or: [{ email: email.toLowerCase() }, { phone: storedPhone }, { phone: normalizedPhone }]
+      });
     }
 
     if (existingUser) {
@@ -212,7 +218,7 @@ router.post('/signup', [
         name,
         email: email.toLowerCase(),
         password: hashedPassword,
-        phone,
+        phone: storedPhone,
         type: buyerType,
         location: extraData.location || 'Not specified',
         isDemo: false,
@@ -233,7 +239,7 @@ router.post('/signup', [
         name,
         email: email.toLowerCase(),
         password: hashedPassword,
-        phone,
+        phone: storedPhone,
         village: extraData.village || 'Not specified',
         district: extraData.district || 'Not specified',
         pincode: extraData.pincode || '000000',
@@ -794,9 +800,11 @@ router.post('/send-otp', [
     }
 
     const { phone, userType, purpose, email } = req.body;
+    const normalizedPhone = phone ? phone.replace(/\D/g, '') : '';
+    const normalizedPhoneWithPlus = normalizedPhone ? `+${normalizedPhone}` : '';
 
     // Validate phone format
-    if (!phone || phone.replace(/\D/g, '').length < 10) {
+    if (!normalizedPhone || normalizedPhone.length < 10) {
       return res.status(400).json({
         success: false,
         error: 'Invalid phone number'
@@ -805,9 +813,10 @@ router.post('/send-otp', [
 
     // For signup, check if user already exists
     if (purpose === 'signup') {
+      const phoneQuery = { $in: [normalizedPhoneWithPlus, normalizedPhone] };
       const existingUser = userType === 'buyer' 
-        ? await Buyer.findOne({ phone })
-        : await Farmer.findOne({ phone });
+        ? await Buyer.findOne({ phone: phoneQuery })
+        : await Farmer.findOne({ phone: phoneQuery });
       
       if (existingUser) {
         return res.status(400).json({
@@ -818,25 +827,26 @@ router.post('/send-otp', [
     }
 
     // Generate and send OTP
-    const result = await otpService.generateAndSendOTP(phone);
+    const result = await otpService.generateAndSendOTP(normalizedPhone);
 
     if (result.success) {
-      // Store in database
-      const normalizedPhone = phone.replace(/\D/g, '');
+      // Store the same OTP in database for verification
       await OTP.findOneAndUpdate(
         { phoneNumber: normalizedPhone },
         {
-          phoneNumber: normalizedPhone,
-          email,
-          otp: otpService.generateOTP(),
-          purpose,
-          userType,
-          isVerified: false,
-          attempts: 0,
-          expiryTime: new Date(Date.now() + 5 * 60 * 1000),
-          updatedAt: new Date()
+          $set: {
+            phoneNumber: normalizedPhone,
+            email,
+            otp: result.otp,
+            purpose,
+            userType,
+            isVerified: false,
+            attempts: 0,
+            expiryTime: new Date(Date.now() + result.expiryMinutes * 60 * 1000),
+            updatedAt: new Date()
+          }
         },
-        { upsert: true }
+        { upsert: true, new: true }
       );
 
       return res.json({
@@ -926,11 +936,13 @@ router.post('/verify-otp', [
     let user;
     let isNewUser = false;
 
-    // Check if user exists
+    // Check if user exists using normalized phone variants
+    const normalizedPhoneWithPlus = `+${normalizedPhone}`;
+    const phoneQuery = { $in: [normalizedPhoneWithPlus, normalizedPhone] };
     if (userType === 'buyer') {
-      user = await Buyer.findOne({ phone: `+${normalizedPhone}` });
+      user = await Buyer.findOne({ phone: phoneQuery });
     } else {
-      user = await Farmer.findOne({ phone: `+${normalizedPhone}` });
+      user = await Farmer.findOne({ phone: phoneQuery });
     }
 
     // If signup and user doesn't exist, create new user
@@ -953,7 +965,7 @@ router.post('/verify-otp', [
           role: 'buyer',
           joinedDate: new Date().toISOString().split('T')[0],
           walletBalance: 0,
-          password: password ? await bcrypt.hash(password, await bcrypt.genSalt(10)) : undefined
+          password: password ? await bcrypt.hash(password, await bcrypt.genSalt(10)) : await bcrypt.hash(crypto.randomBytes(16).toString('hex'), await bcrypt.genSalt(10))
         });
       } else {
         const farmerCount = await Farmer.countDocuments();
@@ -981,7 +993,7 @@ router.post('/verify-otp', [
           landVerified: false,
           language: 'Kannada',
           profileImage: '',
-          password: password ? await bcrypt.hash(password, await bcrypt.genSalt(10)) : undefined
+          password: password ? await bcrypt.hash(password, await bcrypt.genSalt(10)) : await bcrypt.hash(crypto.randomBytes(16).toString('hex'), await bcrypt.genSalt(10))
         });
       }
 
@@ -1073,6 +1085,24 @@ router.post('/resend-otp', [
     const result = await otpService.resendOTP(phone);
 
     if (result.success) {
+      const normalizedPhone = phone.replace(/\D/g, '');
+      
+      // Store the new OTP in database for verification
+      await OTP.findOneAndUpdate(
+        { phoneNumber: normalizedPhone },
+        {
+          $set: {
+            phoneNumber: normalizedPhone,
+            otp: result.otp,
+            isVerified: false,
+            attempts: 0,
+            expiryTime: new Date(Date.now() + result.expiryMinutes * 60 * 1000),
+            updatedAt: new Date()
+          }
+        },
+        { upsert: true, new: true }
+      );
+
       return res.json({
         success: true,
         message: result.message,

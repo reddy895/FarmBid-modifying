@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [useOTP] = useState(true)
   
   // Form states
-  const [loginForm, setLoginForm] = useState({ email: '', password: '', phone: '' })
+  const [loginForm, setLoginForm] = useState({ phone: '' })
   const [signupForm, setSignupForm] = useState({
     name: '',
     email: '',
@@ -44,32 +44,14 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault()
-    setIsLoading(true)
 
-    try {
-      // First, fetch phone number linked to this email
-      const response = await fetch('/api/auth/get-phone', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginForm.email })
-      })
-
-      const data = await response.json()
-
-      if (data.success && data.phone) {
-        // Phone found, send OTP to that phone
-        const otpSent = await handleSendOTP(data.phone, 'login')
-        if (otpSent) {
-          setLoginForm({...loginForm, phone: data.phone})
-        }
-      } else {
-        toast.error('Email not found', { description: 'Please check your email or create an account' })
-      }
-    } catch (error) {
-      toast.error('Connection error', { description: 'Please try again' })
-    } finally {
-      setIsLoading(false)
+    if (!loginForm.phone || loginForm.phone.replace(/\D/g, '').length < 10) {
+      toast.error('Invalid phone number', { description: 'Please enter a valid 10-digit phone number' })
+      return
     }
+
+    // Send OTP to phone number for login
+    const otpSent = await handleSendOTP(loginForm.phone, 'login')
   }
 
   const handleSignup = async (e) => {
@@ -221,8 +203,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           phone,
           userType,
-          purpose,
-          email: isSignUp ? signupForm.email : loginForm.email
+          purpose
         })
       })
 
@@ -232,7 +213,7 @@ export default function LoginPage() {
         setOtpStep(1)
         setOtpExpiry(Date.now() + (data.expiryMinutes * 60 * 1000))
         setOtpAttempts(0)
-        toast.success('OTP Sent!', { description: `Check your phone ${phone}` })
+        toast.success('OTP Sent!', { description: `Check your WhatsApp at ${phone}` })
         return true
       } else {
         toast.error('Failed to send OTP', { description: data.error })
@@ -259,7 +240,7 @@ export default function LoginPage() {
     try {
       let userData = null
 
-      // If signup, include user data and complete registration
+      // If signup, include user data for account creation
       if (purpose === 'signup' && isSignUp) {
         userData = {
           name: signupForm.name,
@@ -269,21 +250,6 @@ export default function LoginPage() {
           location: signupForm.location,
           userType: 'buyer'
         }
-
-        // Create account
-        const signupResponse = await fetch('/api/auth/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
-        })
-
-        const signupData = await signupResponse.json()
-
-        if (!signupData.success) {
-          throw new Error(signupData.error || 'Signup failed')
-        }
-
-        userData = signupData.user
       }
 
       const response = await fetch('/api/auth/verify-otp', {
@@ -307,7 +273,7 @@ export default function LoginPage() {
         localStorage.setItem('farmbid_token', data.token)
         localStorage.setItem('farmbid_user', JSON.stringify(data.user))
 
-        const message = purpose === 'signup' ? 'Account created!' : 'Welcome back!'
+        const message = data.isNewUser ? 'Account created successfully!' : 'Welcome back!'
         toast.success(message, {
           description: `Logged in as ${data.user.name}`
         })
@@ -315,7 +281,7 @@ export default function LoginPage() {
         // Reset forms
         setOtpStep(0)
         setOtpCode('')
-        setLoginForm({ email: '', password: '', phone: '' })
+        setLoginForm({ phone: '' })
         setSignupForm({
           name: '',
           email: '',
@@ -326,7 +292,7 @@ export default function LoginPage() {
           userType: 'buyer'
         })
 
-        // Redirect after showing credential
+        // Redirect after showing success
         setTimeout(() => {
           setSsiStep(0)
           router.push('/')
@@ -365,7 +331,7 @@ export default function LoginPage() {
         setOtpExpiry(Date.now() + (data.expiryMinutes * 60 * 1000))
         setOtpAttempts(0)
         setOtpCode('')
-        toast.success('OTP Resent!', { description: 'Check your phone for the new OTP' })
+        toast.success('OTP Resent!', { description: 'Check your WhatsApp for the new OTP' })
       } else {
         toast.error('Failed to resend OTP', { description: data.error })
       }
@@ -528,7 +494,6 @@ export default function LoginPage() {
                     <p className="text-gray-500">Generating your decentralized identity...</p>
                   </motion.div>
                 ) : (
-                  // Login/Signup Form
                   <motion.div
                     key={isSignUp ? 'signup' : 'login'}
                     initial={{ opacity: 0, x: isSignUp ? 20 : -20 }}
@@ -564,14 +529,12 @@ export default function LoginPage() {
 
                     <div className="flex items-center gap-4 mb-6">
                       <div className="flex-1 h-px bg-gray-300" />
-                      <span className="text-gray-400 text-sm">or use email</span>
+                      <span className="text-gray-400 text-sm">or use phone</span>
                       <div className="flex-1 h-px bg-gray-300" />
                     </div>
 
                     {/* Form */}
-                    {useOTP ? (
-                      // OTP Form
-                      <form className="space-y-4">
+                    <form className="space-y-4">
                         {isSignUp && (
                           <>
                             {/* Name Input for Signup */}
@@ -657,7 +620,7 @@ export default function LoginPage() {
                           <div className="space-y-4">
                             <div className="text-center mb-4">
                               <Smartphone className="h-12 w-12 text-[#228B22] mx-auto mb-2" />
-                              <p className="text-sm text-gray-600">Enter OTP sent to {otpPhone}</p>
+                              <p className="text-sm text-gray-600">Enter OTP sent via WhatsApp to {otpPhone}</p>
                             </div>
                             <div className="relative">
                               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
@@ -738,164 +701,6 @@ export default function LoginPage() {
                           </div>
                         )}
                       </form>
-                    ) : (
-                      // Email/Password Form
-                      <form onSubmit={isSignUp ? handleSignup : handleLogin} className="space-y-4">
-                      {isSignUp && (
-                        <>
-                          {/* Name Input */}
-                          <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                              <User className="h-5 w-5" />
-                            </div>
-                            <input
-                              type="text"
-                              placeholder="Full Name"
-                              value={signupForm.name}
-                              onChange={(e) => setSignupForm({...signupForm, name: e.target.value})}
-                              required
-                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
-                              style={{
-                                background: '#FFFFFF'
-                              }}
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      {/* Email Input */}
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                          <Mail className="h-5 w-5" />
-                        </div>
-                        <input
-                          type="email"
-                          placeholder="Email"
-                          value={isSignUp ? signupForm.email : loginForm.email}
-                          onChange={(e) => isSignUp 
-                            ? setSignupForm({...signupForm, email: e.target.value})
-                            : setLoginForm({...loginForm, email: e.target.value})
-                          }
-                          required
-                          className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
-                          style={{
-                            background: '#FFFFFF'
-                          }}
-                        />
-                      </div>
-
-                      {/* Password Input */}
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                          <Lock className="h-5 w-5" />
-                        </div>
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="Password"
-                          value={isSignUp ? signupForm.password : loginForm.password}
-                          onChange={(e) => isSignUp 
-                            ? setSignupForm({...signupForm, password: e.target.value})
-                            : setLoginForm({...loginForm, password: e.target.value})
-                          }
-                          required
-                          className="w-full pl-12 pr-12 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
-                          style={{
-                            background: '#FFFFFF'
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                        </button>
-                      </div>
-
-                      {isSignUp && (
-                        <>
-                          {/* Confirm Password */}
-                          <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                              <Lock className="h-5 w-5" />
-                            </div>
-                            <input
-                              type={showPassword ? 'text' : 'password'}
-                              placeholder="Confirm Password"
-                              value={signupForm.confirmPassword}
-                              onChange={(e) => setSignupForm({...signupForm, confirmPassword: e.target.value})}
-                              required
-                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
-                              style={{
-                                background: '#FFFFFF'
-                              }}
-                            />
-                          </div>
-
-                          {/* Phone */}
-                          <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                              <Phone className="h-5 w-5" />
-                            </div>
-                            <input
-                              type="tel"
-                              placeholder="Phone Number"
-                              value={signupForm.phone}
-                              onChange={(e) => setSignupForm({...signupForm, phone: e.target.value})}
-                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
-                              style={{
-                                background: '#FFFFFF'
-                              }}
-                            />
-                          </div>
-
-                          {/* Location */}
-                          <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                              <MapPin className="h-5 w-5" />
-                            </div>
-                            <input
-                              type="text"
-                              placeholder="Location (City/District)"
-                              value={signupForm.location}
-                              onChange={(e) => setSignupForm({...signupForm, location: e.target.value})}
-                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
-                              style={{
-                                background: '#FFFFFF'
-                              }}
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      {!isSignUp && (
-                        <div className="text-right">
-                          <button type="button" className="text-sm text-[#228B22] hover:text-[#228B22]/80">
-                            Forgot password?
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Submit Button */}
-                      <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full py-3 rounded-full font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2 hover:opacity-90"
-                        style={{
-                          background: '#228B22'
-                        }}
-                      >
-                        {isLoading ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <>
-                            {isSignUp ? 'Create Account' : 'Sign In'}
-                            <ArrowRight className="h-5 w-5" />
-                          </>
-                        )}
-                      </button>
-                    </form>
-                    )}
 
 
 
