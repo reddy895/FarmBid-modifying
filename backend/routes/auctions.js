@@ -5,6 +5,7 @@ const Delivery = require('../models/Delivery');
 const Bid = require('../models/Bid');
 const Listing = require('../models/Listing');
 const { anchorToBlockchain, createBlockchainEvent } = require('../utils/blockchain');
+const { sendWhatsAppMessage } = require('../utils/whatsapp');
 
 // GET /api/auctions/completed - Get completed/finished auctions
 router.get('/completed', async (req, res, next) => {

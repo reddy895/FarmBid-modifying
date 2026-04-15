@@ -2,6 +2,8 @@ const crypto = require('crypto');
 const razorpay = require('../config/razorpay');
 const Wallet = require('../models/Wallet');
 const WalletTransaction = require('../models/WalletTransaction');
+const { sendWhatsAppMessage } = require('../utils/whatsapp');
+const User = require('../models/User'); // fallback if needed
 
 // 1. CREATE RAZORPAY ORDER
 exports.createOrder = async (req, res) => {
