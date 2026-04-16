@@ -43,8 +43,8 @@ app.use(helmet({
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*',
-  credentials: true,
+  origin: process.env.CORS_ORIGINS === '*' ? '*' : (process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*'),
+  credentials: false,
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));

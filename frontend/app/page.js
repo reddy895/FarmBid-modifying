@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { QRCodeSVG } from 'qrcode.react'
+import FarmerAgentDashboard from '@/components/FarmerAgentDashboard'
 
 // Hooks
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -34,7 +35,7 @@ import {
   ArrowUpRight, ArrowDownRight, Send, Mic, Image as ImageIcon,
   Phone, MoreVertical, Check, Copy, Filter, RefreshCw, Truck,
   FileText, CreditCard, Building2, Star, Award, Zap, Globe, Lock,
-  LogOut, User, Fingerprint, Receipt, Handshake
+  LogOut, User, Fingerprint, Receipt, Handshake, PackageCheck
 } from 'lucide-react'
 
 // WhatsApp demo messages
@@ -103,8 +104,9 @@ const formatINR = (amount) => {
 const QualityRing = ({ value, size = 60 }) => {
   const radius = (size - 8) / 2
   const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference - (value / 100) * circumference
-  const color = value >= 85 ? '#16a34a' : value >= 70 ? '#ca8a04' : '#dc2626'
+  const val = Number(value) || 0
+  const strokeDashoffset = circumference - (val / 100) * circumference
+  const color = val >= 85 ? '#16a34a' : val >= 70 ? '#ca8a04' : '#dc2626'
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -189,7 +191,7 @@ const CountdownTimer = ({ endsAt, status }) => {
 }
 
 // Auction Card Component
-const AuctionCard = ({ listing, onBid }) => {
+const AuctionCard = ({ listing, onBid, onRelease }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -204,8 +206,8 @@ const AuctionCard = ({ listing, onBid }) => {
             className="w-full h-40 object-cover"
           />
           <div className="absolute top-2 left-2 flex gap-1.5">
-            <Badge variant={listing.status === 'ending_soon' ? 'destructive' : 'default'} className="backdrop-blur-sm">
-              {listing.status === 'ending_soon' ? 'ðŸ”¥ Ending Soon' : listing.status === 'live' ? 'ðŸŸ¢ Live' : listing.status}
+            <Badge variant={listing.status === 'won' ? 'outline' : listing.status === 'ending_soon' ? 'destructive' : 'default'} className={`backdrop-blur-sm ${listing.status === 'won' ? 'border-amber-500 text-amber-500 bg-amber-500/10' : ''}`}>
+              {listing.status === 'won' ? '🏆 WON' : listing.status === 'ending_soon' ? '🔥 Ending Soon' : listing.status === 'live' ? '🟢 Live' : listing.status}
             </Badge>
           </div>
           <div className="absolute top-2 right-2 space-y-1">
@@ -296,11 +298,18 @@ const AuctionCard = ({ listing, onBid }) => {
           </div>
         </CardContent>
 
-        <CardFooter className="pt-0">
-          <Button className="w-full" onClick={() => onBid(listing)}>
-            <Gavel className="h-4 w-4 mr-2" />
-            Place Bid
-          </Button>
+        <CardFooter className="pt-0 flex flex-col gap-2">
+          {listing.status === 'won' || listing.status === 'ended' ? (
+            <Button className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20" onClick={() => onRelease && onRelease(listing.id || listing._id)}>
+              <PackageCheck className="h-4 w-4 mr-2" />
+              Confirm Delivery ✅
+            </Button>
+          ) : (
+            <Button className="w-full" onClick={() => onBid(listing)}>
+              <Gavel className="h-4 w-4 mr-2" />
+              Place Bid
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </motion.div>
@@ -621,23 +630,13 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
   }, [paymentPhase, isVerifying])
 
   const generateUpiUri = (amount) => {
-    // If the configured ID is actually a full payment link (like Razorpay.me), use it dynamically
-    if (upiId && upiId.startsWith('http')) {
-      return `${upiId}?amount=${amount}`;
-    }
-
     const formattedAmount = Number(amount).toFixed(2);
-    const payeeName = encodeURIComponent('FarmBid');
-    // Shorter transaction reference (some UPI apps have limits)
-    const shortRef = txRef.slice(-12);
-    const transactionNote = encodeURIComponent(`Deposit_${shortRef.slice(-4)}`);
+    // Extremely simplified URI for maximum compatibility (some apps reject long TRs or custom Notes)
     const params = [
-      `pa=8618118952@axl`,
+      `pa=9019808476-2@ybl`,
       `pn=${encodeURIComponent('FarmBid')}`,
       `am=${formattedAmount}`,
-      `tr=${shortRef}`,
-      `cu=INR`,
-      `tn=${encodeURIComponent(`Deposit_${txRef.slice(-6)}`)}`
+      `cu=INR`
     ].join('&')
     return `upi://pay?${params}`
   }
@@ -682,19 +681,22 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
       script.async = true;
       script.onload = () => {
         const rzp = new window.Razorpay({
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SZlp7uSKnjrnRE',
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SdxN7CqrUoaRHi',
           amount: amount * 100,
           currency: 'INR',
           name: 'FarmBid',
           description: `Wallet Top-up: ₹${amount}`,
           order_id: data.orderId,
-          // Force UPI and hide contact details modal
+          // Explicitly command Razorpay interface to prioritize and render the UPI QR Flow 
           config: {
             display: {
               blocks: {
-                banks: { name: 'Payment Method', instruments: [{ method: 'upi' }, { method: 'card' }] }
+                qr: {
+                  name: 'Scan QR to Pay',
+                  instruments: [{ method: 'upi', flows: ['qr'] }]
+                }
               },
-              sequence: ['block.banks'],
+              sequence: ['block.qr'],
               preferences: { show_default_blocks: true }
             }
           },
@@ -780,17 +782,10 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
     hasPaid.current = true
     setIsVerifying(true)
     try {
-<<<<<<< HEAD
-      const token = localStorage.getItem('farmbid_token');
-      const response = await fetch(`${API_URL}/wallet/topup`, {
-        method: 'POST',
-        headers: { 
-=======
       const token = localStorage.getItem('farmbid_token') || localStorage.getItem('token')
       const response = await fetch(`${API_URL}/wallet/topup`, {
         method: 'POST',
         headers: {
->>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -802,27 +797,18 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
       })
       const data = await response.json()
       if (data.success) {
-<<<<<<< HEAD
         setNewBalanceAfterPayment(data.newBalance);
         setPaymentPhase('success');
-        onConfirm(data.newBalance);
-=======
         onConfirm(data.newBalance)
-        setPaymentPhase('success')
->>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
       } else {
         toast.error(data.error || 'Failed to update wallet balance')
         hasPaid.current = false // Allow retry
       }
     } catch (e) {
-<<<<<<< HEAD
-      toast.error('Connection error');
-=======
       toast.error('Connection error. Please try again.')
       hasPaid.current = false // Allow retry
     } finally {
       setIsVerifying(false)
->>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
     }
   }
 
@@ -879,11 +865,7 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
 
         <div className="py-4">
           {paymentPhase === 'select' && (
-<<<<<<< HEAD
             <div className={`grid ${methods.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-=======
-            <div className="grid grid-cols-2 gap-3">
->>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
               {methods.map((m) => (
                 <div
                   key={m.id}
@@ -902,7 +884,7 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
           {paymentPhase === 'scanner' && (
             <div className="flex flex-col items-center justify-center space-y-4 py-4">
               <div className="bg-white p-4 rounded-xl shadow-lg border-2 border-primary/20">
-                <QRCodeSVG value={upiUri} size={220} level="H" includeMargin={true} />
+                <img src="/sachin-qr.jpg" alt="Scan to Pay via PhonePe" className="w-[220px] rounded object-contain" />
               </div>
               <div className="text-center space-y-1">
                 <Badge variant="outline" className="animate-pulse">
@@ -914,26 +896,6 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
             </div>
           )}
 
-<<<<<<< HEAD
-          {paymentPhase === 'success' && (
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="flex flex-col items-center justify-center space-y-4 py-8 text-center"
-            >
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                <CheckCircle2 className="h-10 w-10 text-green-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800">Payment Successful!</h3>
-              <div className="space-y-1">
-                <p className="text-muted-foreground">Added {formatINR(amount)} to your wallet</p>
-                <div className="p-4 bg-muted/50 rounded-2xl mt-4">
-                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">New Wallet Balance</p>
-                  <p className="text-3xl font-bold mt-1 text-primary">{formatINR(newBalanceAfterPayment)}</p>
-                </div>
-              </div>
-            </motion.div>
-=======
           {paymentPhase === 'processing' && (
             <div className="flex flex-col items-center justify-center space-y-4 py-8">
               <div className="relative">
@@ -946,7 +908,6 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
               {/* Hidden auto-confirm trigger */}
               <button id="auto-confirm-btn" onClick={handleManualConfirm} className="hidden" />
             </div>
->>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
           )}
 
           {paymentPhase === 'success' && (
@@ -970,12 +931,8 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
 
         <DialogFooter className="sm:justify-between gap-3">
           {paymentPhase === 'success' ? (
-<<<<<<< HEAD
-            <Button className="w-full" onClick={onClose}>
-=======
             <Button onClick={onClose} className="w-full bg-green-600 hover:bg-green-700 text-white gap-2">
               <Check className="h-4 w-4" />
->>>>>>> fca49789c2c079d3b74358089e79d3c9cab44aa8
               Back to Dashboard
             </Button>
           ) : paymentPhase === 'scanner' ? (
@@ -1404,6 +1361,36 @@ export default function App() {
     </button>
   )
 
+  // If farmer or agent, show their dedicated dashboard
+  if (isAuthenticated && currentUser && (currentUser.role === 'farmer' || currentUser.role === 'agent')) {
+    return (
+      <TooltipProvider>
+        <div className={`min-h-screen bg-background ${darkMode ? 'dark' : ''}`}>
+          <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex h-16 items-center px-6 justify-between">
+              <div className="flex items-center gap-2">
+                <div className="bg-primary p-1.5 rounded-lg">
+                  <Leaf className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <span className="font-bold text-xl">FarmBid</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="hidden md:block text-right">
+                  <p className="text-sm font-bold">{currentUser.name}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase">{currentUser.role === 'agent' ? 'Field Agent' : 'Farmer'}</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:bg-muted rounded-full">
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </header>
+          <FarmerAgentDashboard user={currentUser} />
+        </div>
+      </TooltipProvider>
+    )
+  }
+
   return (
     <TooltipProvider>
       <div className={`min-h-screen bg-background ${darkMode ? 'dark' : ''}`}>
@@ -1632,7 +1619,7 @@ export default function App() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {filteredListings.map(listing => (
-                      <AuctionCard key={listing.id} listing={listing} onBid={handleBid} />
+                      <AuctionCard key={listing.id} listing={listing} onBid={handleBid} onRelease={handleEscrowRelease} />
                     ))}
                   </div>
                 </motion.div>

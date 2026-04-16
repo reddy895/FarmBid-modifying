@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { 
   Mail, Lock, User, Building2, Phone, MapPin, Leaf,
   Eye, EyeOff, ArrowRight, Loader2, Shield, Fingerprint,
-  ChevronRight, CheckCircle2, Globe, Smartphone
+  ChevronRight, CheckCircle2, Globe, Smartphone, ShoppingCart
 } from 'lucide-react'
 import { useGoogleLogin } from '@react-oauth/google'
 import FacebookLogin from 'react-facebook-login/dist/facebook-login-render-props.js'
@@ -15,13 +15,13 @@ import { LinkedIn } from 'react-linkedin-login-oauth2'
 
 export default function LoginPage() {
   const router = useRouter()
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
   const [isSignUp, setIsSignUp] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [userType, setUserType] = useState('buyer') // buyer, farmer, admin
+  const [userType, setUserType] = useState('retailer') // 'retailer' or 'farmer'
   
   // Form states
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' })
+  const [loginForm, setLoginForm] = useState({ email: '', password: '', phone: '' })
   const [signupForm, setSignupForm] = useState({
     name: '',
     email: '',
@@ -32,6 +32,14 @@ export default function LoginPage() {
     userType: 'buyer'
   })
 
+  // OTP states
+  const [useOTP, setUseOTP] = useState(true)
+  const [otpStep, setOtpStep] = useState(0) // 0: initial, 1: otp sent, 2: verifying
+  const [otpCode, setOtpCode] = useState('')
+  const [otpPhone, setOtpPhone] = useState('')
+  const [otpExpiry, setOtpExpiry] = useState(null)
+  const [otpAttempts, setOtpAttempts] = useState(0)
+
   // SSI verification state
   const [ssiStep, setSsiStep] = useState(0) // 0: form, 1: verifying, 2: credential issued
   const [verifiableCredential, setVerifiableCredential] = useState(null)
@@ -39,31 +47,25 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-    
+
     try {
-      const response = await fetch('/api/auth/login', {
+      // First, fetch phone number linked to this email
+      const response = await fetch(`${API_URL}/auth/get-phone`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginForm)
+        body: JSON.stringify({ email: loginForm.email })
       })
-      
+
       const data = await response.json()
-      
-      if (data.success) {
-        // Store token and user data
-        localStorage.setItem('farmbid_token', data.token)
-        localStorage.setItem('farmbid_user', JSON.stringify(data.user))
-        
-        toast.success('Welcome back!', {
-          description: `Logged in as ${data.user.name}`
-        })
-        
-        // Redirect based on role
-        setTimeout(() => {
-          router.push('/')
-        }, 1000)
+
+      if (data.success && data.phone) {
+        // Phone found, send OTP to that phone
+        const otpSent = await handleSendOTP(data.phone, 'login')
+        if (otpSent) {
+          setLoginForm({...loginForm, phone: data.phone})
+        }
       } else {
-        toast.error('Login failed', { description: data.error })
+        toast.error('Email not found', { description: 'Please check your email or create an account' })
       }
     } catch (error) {
       toast.error('Connection error', { description: 'Please try again' })
@@ -74,68 +76,35 @@ export default function LoginPage() {
 
   const handleSignup = async (e) => {
     e.preventDefault()
-    
+
     if (signupForm.password !== signupForm.confirmPassword) {
       toast.error('Passwords do not match')
       return
     }
-    
-    setIsLoading(true)
-    setSsiStep(1) // Start SSI verification
-    
-    try {
-      // Simulate SSI credential creation delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...signupForm,
-          userType
-        })
-      })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        setSsiStep(2)
-        setVerifiableCredential(data.credential)
-        
-        // Store token and user data
-        localStorage.setItem('farmbid_token', data.token)
-        localStorage.setItem('farmbid_user', JSON.stringify(data.user))
-        
-        toast.success('Account created!', {
-          description: 'Your SSI credential has been issued'
-        })
-        
-        // Redirect after showing credential
-        setTimeout(() => {
-          router.push('/')
-        }, 3000)
-      } else {
-        setSsiStep(0)
-        toast.error('Signup failed', { description: data.error })
-      }
-    } catch (error) {
-      setSsiStep(0)
-      toast.error('Connection error', { description: 'Please try again' })
-    } finally {
-      setIsLoading(false)
-    }
+
+    // Send OTP to phone number provided during signup
+    const otpSent = await handleSendOTP(signupForm.phone, 'signup')
   }
 
   const realGoogleLogin = useGoogleLogin({
+    scope: 'openid email profile',
     onSuccess: async (tokenResponse) => {
       setIsLoading(true)
       toast.info('Authenticating with backend server...')
       
       try {
-        const response = await fetch('/api/auth/google-login', {
+        const googleToken = tokenResponse.access_token || tokenResponse.credential || tokenResponse.id_token || tokenResponse.code
+
+        if (!googleToken) {
+          toast.error('Google login failed', { description: 'No token received from Google' })
+          setIsLoading(false)
+          return
+        }
+
+        const response = await fetch(`${API_URL}/auth/google-login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: tokenResponse.access_token, role: userType })
+          body: JSON.stringify({ token: googleToken, role: userType === 'retailer' ? 'buyer' : 'farmer' })
         })
         
         const data = await response.json()
@@ -150,7 +119,7 @@ export default function LoginPage() {
           
           setTimeout(() => router.push('/'), 1000)
         } else {
-           toast.error('Google login failed', { description: data.error })
+          toast.error('Google login failed', { description: data.error })
         }
       } catch (error) {
         toast.error('Google connection error', { description: 'Please try again' })
@@ -174,7 +143,7 @@ export default function LoginPage() {
     toast.info('Authenticating with Facebook...')
     
     try {
-      const res = await fetch('/api/auth/facebook-login', {
+      const res = await fetch(`${API_URL}/auth/facebook-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: response.accessToken, role: userType })
@@ -204,7 +173,7 @@ export default function LoginPage() {
   const simulateFacebookSuccess = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/demo-login', {
+      const response = await fetch(`${API_URL}/auth/demo-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: userType })
@@ -244,7 +213,7 @@ export default function LoginPage() {
     toast.info('Authenticating with LinkedIn...')
     
     try {
-      const res = await fetch('/api/auth/linkedin-login', {
+      const res = await fetch(`${API_URL}/auth/linkedin-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: response.code, role: userType })
@@ -274,7 +243,7 @@ export default function LoginPage() {
   const simulateLinkedInSuccess = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/demo-login', {
+      const response = await fetch(`${API_URL}/auth/demo-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: userType })
@@ -335,7 +304,7 @@ export default function LoginPage() {
       await new Promise(resolve => setTimeout(resolve, 1500))
       
       // For demo purposes, log them in through the existing auth system
-      const response = await fetch('/api/auth/demo-login', {
+      const response = await fetch(`${API_URL}/auth/demo-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: userType === 'farmer' ? 'farmer' : 'buyer' })
@@ -374,7 +343,7 @@ export default function LoginPage() {
   const handleDemoLogin = async (role) => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/auth/demo-login', {
+      const response = await fetch(`${API_URL}/auth/demo-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role })
@@ -399,14 +368,185 @@ export default function LoginPage() {
     }
   }
 
+  // OTP Authentication Methods
+  const handleSendOTP = async (phone, purpose = 'login') => {
+    if (!phone || phone.replace(/\D/g, '').length < 10) {
+      toast.error('Invalid phone number', { description: 'Please enter a valid 10-digit phone number' })
+      return false
+    }
+
+    setIsLoading(true)
+    setOtpPhone(phone)
+    
+    try {
+      const response = await fetch(`${API_URL}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone,
+          userType,
+          purpose,
+          email: isSignUp ? signupForm.email : loginForm.email
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setOtpStep(1)
+        setOtpExpiry(Date.now() + (data.expiryMinutes * 60 * 1000))
+        setOtpAttempts(0)
+        toast.success('OTP Sent!', { description: `Check your phone ${phone}` })
+        return true
+      } else {
+        toast.error('Failed to send OTP', { description: data.error })
+        return false
+      }
+    } catch (error) {
+      console.error('Send OTP error:', error)
+      toast.error('Connection error', { description: 'Failed to send OTP' })
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleVerifyOTP = async (phone, otp, purpose = 'login') => {
+    if (!otp || otp.length !== 6) {
+      toast.error('Invalid OTP', { description: 'Please enter a valid 6-digit OTP' })
+      return
+    }
+
+    setIsLoading(true)
+    setOtpStep(2)
+
+    try {
+      let userData = null
+
+      // If signup, include user data and complete registration
+      if (purpose === 'signup' && isSignUp) {
+        userData = {
+          name: signupForm.name,
+          email: signupForm.email,
+          password: signupForm.password,
+          phone,
+          location: signupForm.location,
+          userType: userType === 'retailer' ? 'buyer' : 'farmer'
+        }
+
+        // Create account
+        const signupResponse = await fetch(`${API_URL}/auth/signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData)
+        })
+
+        const signupData = await signupResponse.json()
+
+        if (!signupData.success) {
+          throw new Error(signupData.error || 'Signup failed')
+        }
+        userData = signupData.user
+      }
+
+      const response = await fetch(`${API_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone,
+          otp,
+          userType: userType === 'retailer' ? 'buyer' : 'farmer',
+          userData
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setSsiStep(2)
+        setVerifiableCredential(data.credential)
+
+        // Store token and user data
+        localStorage.setItem('farmbid_token', data.token)
+        localStorage.setItem('farmbid_user', JSON.stringify(data.user))
+
+        const message = purpose === 'signup' ? 'Account created!' : 'Welcome back!'
+        toast.success(message, {
+          description: `Logged in as ${data.user.name}`
+        })
+
+        // Reset forms
+        setOtpStep(0)
+        setOtpCode('')
+        setLoginForm({ email: '', password: '', phone: '' })
+        setSignupForm({
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          phone: '',
+          location: '',
+          userType: 'buyer'
+        })
+
+        // Redirect after showing credential
+        setTimeout(() => {
+          setSsiStep(0)
+          router.push('/')
+        }, 2000)
+      } else {
+        setSsiStep(0)
+        setOtpStep(1)
+        toast.error('OTP verification failed', {
+          description: data.error || 'Invalid OTP. Please try again.'
+        })
+      }
+    } catch (error) {
+      console.error('Verify OTP error:', error)
+      setSsiStep(0)
+      setOtpStep(1)
+      toast.error('Connection error', { description: error.message || 'Please try again' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResendOTP = async () => {
+    if (!otpPhone) return
+    
+    setIsLoading(true)
+    try {
+      const response = await fetch(`${API_URL}/auth/resend-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: otpPhone })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setOtpExpiry(Date.now() + (data.expiryMinutes * 60 * 1000))
+        setOtpAttempts(0)
+        setOtpCode('')
+        toast.success('OTP Resent!', { description: 'Check your phone for the new OTP' })
+      } else {
+        toast.error('Failed to resend OTP', { description: data.error })
+      }
+    } catch (error) {
+      toast.error('Connection error', { description: 'Please try again' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{
-      background: 'linear-gradient(135deg, #e0e5ec 0%, #f0f4f8 50%, #e8eef3 100%)'
+      background: '#FFFFFF'
     }}>
       {/* Background decorative elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-teal-200/30 to-cyan-200/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-green-200/30 to-emerald-200/30 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-[#228B22]/10 to-[#228B22]/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-[#228B22]/10 to-[#228B22]/5 rounded-full blur-3xl" />
       </div>
 
       {/* Main Container */}
@@ -416,8 +556,8 @@ export default function LoginPage() {
         className="relative w-full max-w-4xl"
       >
         {/* Neuromorphic Card */}
-        <div className="relative bg-[#e0e5ec] rounded-[30px] overflow-hidden" style={{
-          boxShadow: '20px 20px 60px #bec3c9, -20px -20px 60px #ffffff'
+        <div className="relative bg-[#FFFFFF] rounded-[30px] overflow-hidden" style={{
+          boxShadow: '0 2px 8px rgba(38, 73, 65, 0.1)'
         }}>
           <div className="flex flex-col md:flex-row min-h-[600px]">
             
@@ -437,7 +577,7 @@ export default function LoginPage() {
             <motion.div
               className={`w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center items-center text-white relative overflow-hidden ${isSignUp ? 'md:order-2' : 'md:order-1'}`}
               style={{
-                background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #2dd4bf 100%)'
+                background: '#228B22'
               }}
               initial={false}
               animate={{ x: 0 }}
@@ -470,7 +610,7 @@ export default function LoginPage() {
                     </p>
                     <button
                       onClick={() => setIsSignUp(false)}
-                      className="px-8 py-3 border-2 border-white rounded-full font-semibold hover:bg-white hover:text-teal-600 transition-all duration-300"
+                      className="px-8 py-3 border-2 border-white rounded-full font-semibold hover:bg-white hover:text-[#264941] transition-all duration-300"
                     >
                       Sign In
                     </button>
@@ -483,7 +623,7 @@ export default function LoginPage() {
                     </p>
                     <button
                       onClick={() => setIsSignUp(true)}
-                      className="px-8 py-3 border-2 border-white rounded-full font-semibold hover:bg-white hover:text-teal-600 transition-all duration-300"
+                      className="px-8 py-3 border-2 border-white rounded-full font-semibold hover:bg-white hover:text-[#264941] transition-all duration-300"
                     >
                       Create Account
                     </button>
@@ -510,7 +650,7 @@ export default function LoginPage() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     className="text-center"
                   >
-                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-[#264941] rounded-full flex items-center justify-center">
                       <CheckCircle2 className="h-10 w-10 text-white" />
                     </div>
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">Credential Issued!</h3>
@@ -520,11 +660,11 @@ export default function LoginPage() {
                       boxShadow: 'inset 4px 4px 8px #d1d5db, inset -4px -4px 8px #ffffff'
                     }}>
                       <p className="text-xs text-gray-400 mb-1">DID (Decentralized Identifier)</p>
-                      <code className="text-xs text-teal-600 break-all">
+                      <code className="text-xs text-[#264941] break-all">
                         {verifiableCredential?.credentialSubject?.id || 'did:farmbid:user:...'}
                       </code>
                       <div className="flex items-center gap-2 mt-3">
-                        <Fingerprint className="h-4 w-4 text-teal-500" />
+                        <Fingerprint className="h-4 w-4 text-[#264941]" />
                         <span className="text-sm text-gray-600">Blockchain-anchored identity</span>
                       </div>
                     </div>
@@ -541,9 +681,9 @@ export default function LoginPage() {
                     className="text-center"
                   >
                     <div className="w-20 h-20 mx-auto mb-6 relative">
-                      <div className="absolute inset-0 border-4 border-teal-200 rounded-full" />
-                      <div className="absolute inset-0 border-4 border-teal-500 rounded-full border-t-transparent animate-spin" />
-                      <div className="absolute inset-4 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
+                      <div className="absolute inset-0 border-4 border-[#228B22]/20 rounded-full" />
+                      <div className="absolute inset-0 border-4 border-[#228B22] rounded-full border-t-transparent animate-spin" />
+                      <div className="absolute inset-4 bg-[#264941] rounded-full flex items-center justify-center">
                         <Shield className="h-6 w-6 text-white" />
                       </div>
                     </div>
@@ -559,12 +699,36 @@ export default function LoginPage() {
                     exit={{ opacity: 0, x: isSignUp ? -20 : 20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                      {isSignUp ? 'Create Account' : 'Sign In'}
-                    </h2>
                     <p className="text-gray-500 mb-6">
                       {isSignUp ? 'Join the agricultural revolution' : 'Welcome back to FarmBid'}
                     </p>
+
+                    {/* Role Selection Segmented Control */}
+                    <div className="flex p-1 gap-1 mb-8 bg-[#e0e5ec] rounded-2xl" 
+                         style={{ boxShadow: 'inset 4px 4px 8px #bec3c9, inset -4px -4px 8px #ffffff' }}>
+                      <button
+                        onClick={() => setUserType('retailer')}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+                          userType === 'retailer' 
+                          ? 'bg-white text-[#228B22] shadow-[4px_4px_8px_#bec3c9]' 
+                          : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        Retailer
+                      </button>
+                      <button
+                        onClick={() => setUserType('farmer')}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+                          userType === 'farmer' 
+                          ? 'bg-white text-[#228B22] shadow-[4px_4px_8px_#bec3c9]' 
+                          : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        <Leaf className="h-4 w-4" />
+                        Farmer/Agent
+                      </button>
+                    </div>
 
                     {/* Social Login */}
                     <div className="flex justify-center gap-4 mb-6">
@@ -632,7 +796,12 @@ export default function LoginPage() {
                           );
                         }
                         
-                        // Default: Use our handled mock/real logic for Google or Dev Mode
+                        // Special handling for providers with real hooks
+                        if (provider === 'Google') {
+                          return btn(() => realGoogleLogin());
+                        }
+
+                        // Default: Use our handled mock/real logic for Dev Mode
                         return btn(() => handleSocialLogin(provider));
                       })}
                     </div>
@@ -644,13 +813,204 @@ export default function LoginPage() {
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={isSignUp ? handleSignup : handleLogin} className="space-y-4">
+                    {useOTP ? (
+                      // OTP Form
+                      <form className="space-y-4">
+                        {isSignUp && (
+                          <>
+                            {/* User Type Selection */}
+                            <div className="flex gap-2 p-1 rounded-full mb-4 border border-gray-300" style={{
+                              background: '#FFFFFF'
+                            }}>
+                              {[{id: 'buyer', label: 'Buyer', icon: Building2}, {id: 'farmer', label: 'Farmer', icon: Leaf}].map((type) => (
+                                <button
+                                  key={type.id}
+                                  type="button"
+                                  onClick={() => setUserType(type.id)}
+                                  className={`flex-1 py-2 px-4 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                                    userType === type.id
+                                      ? 'bg-[#228B22] text-white shadow-lg'
+                                      : 'text-gray-500 hover:text-gray-700'
+                                  }`}
+                                >
+                                  <type.icon className="h-4 w-4" />
+                                  {type.label}
+                                </button>
+                              ))}
+                            </div>
+
+                            {/* Name Input for Signup */}
+                            <div className="relative">
+                              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                <User className="h-5 w-5" />
+                              </div>
+                              <input
+                                type="text"
+                                placeholder="Full Name"
+                                value={signupForm.name}
+                                onChange={(e) => setSignupForm({...signupForm, name: e.target.value})}
+                                required
+                                className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
+                                style={{
+                                  background: '#FFFFFF'
+                                }}
+                              />
+                            </div>
+
+                            {/* Email Input for Signup */}
+                            <div className="relative">
+                              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                <Mail className="h-5 w-5" />
+                              </div>
+                              <input
+                                type="email"
+                                placeholder="Email"
+                                value={signupForm.email}
+                                onChange={(e) => setSignupForm({...signupForm, email: e.target.value})}
+                                required
+                                className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
+                                style={{
+                                  background: '#FFFFFF'
+                                }}
+                              />
+                            </div>
+
+                            {/* Location */}
+                            <div className="relative">
+                              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                <MapPin className="h-5 w-5" />
+                              </div>
+                              <input
+                                type="text"
+                                placeholder="Location (City/District)"
+                                value={signupForm.location}
+                                onChange={(e) => setSignupForm({...signupForm, location: e.target.value})}
+                                className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
+                                style={{
+                                  background: '#FFFFFF'
+                                }}
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        {/* Phone Input for OTP */}
+                        {otpStep === 0 && (
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                              <Phone className="h-5 w-5" />
+                            </div>
+                            <input
+                              type="tel"
+                              placeholder="Phone Number"
+                              value={isSignUp ? signupForm.phone : loginForm.phone}
+                              onChange={(e) => isSignUp
+                                ? setSignupForm({...signupForm, phone: e.target.value})
+                                : setLoginForm({...loginForm, phone: e.target.value})
+                              }
+                              required
+                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
+                              style={{
+                                background: '#FFFFFF'
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {/* OTP Input Display */}
+                        {otpStep === 1 && (
+                          <div className="space-y-4">
+                            <div className="text-center mb-4">
+                              <Smartphone className="h-12 w-12 text-[#228B22] mx-auto mb-2" />
+                              <p className="text-sm text-gray-600">Enter OTP sent to {otpPhone}</p>
+                            </div>
+                            <div className="relative">
+                              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                <Shield className="h-5 w-5" />
+                              </div>
+                              <input
+                                type="text"
+                                placeholder="Enter 6-digit OTP"
+                                value={otpCode}
+                                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                maxLength="6"
+                                required
+                                className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300 text-center tracking-widest"
+                                style={{
+                                  background: '#FFFFFF'
+                                }}
+                              />
+                            </div>
+                            {otpExpiry && (
+                              <p className="text-xs text-gray-400 text-center">
+                                OTP expires in {Math.max(0, Math.floor((otpExpiry - Date.now()) / 1000))} seconds
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Send OTP Button */}
+                        {otpStep === 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleSendOTP(isSignUp ? signupForm.phone : loginForm.phone, isSignUp ? 'signup' : 'login')}
+                            disabled={isLoading}
+                            className="w-full py-3 rounded-full font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2 hover:opacity-90"
+                            style={{
+                              background: '#228B22'
+                            }}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <>
+                                Send OTP
+                                <ArrowRight className="h-5 w-5" />
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        {/* Verify OTP Button */}
+                        {otpStep === 1 && (
+                          <div className="space-y-3">
+                            <button
+                              type="button"
+                              onClick={() => handleVerifyOTP(otpPhone, otpCode, isSignUp ? 'signup' : 'login')}
+                              disabled={isLoading || otpCode.length !== 6}
+                              className="w-full py-3 rounded-full font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+                              style={{
+                                background: '#228B22'
+                              }}
+                            >
+                              {isLoading ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <>
+                                  Verify OTP
+                                  <ArrowRight className="h-5 w-5" />
+                                </>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleResendOTP}
+                              disabled={isLoading}
+                              className="w-full py-2 rounded-full font-medium text-[#228B22] transition-all duration-300 border border-[#228B22] hover:bg-[#228B22]/5"
+                            >
+                              Resend OTP
+                            </button>
+                          </div>
+                        )}
+                      </form>
+                    ) : (
+                      // Email/Password Form
+                      <form onSubmit={isSignUp ? handleSignup : handleLogin} className="space-y-4">
                       {isSignUp && (
                         <>
                           {/* User Type Selection */}
-                          <div className="flex gap-2 p-1 rounded-full mb-4" style={{
-                            background: '#e0e5ec',
-                            boxShadow: 'inset 3px 3px 6px #bec3c9, inset -3px -3px 6px #ffffff'
+                          <div className="flex gap-2 p-1 rounded-full mb-4 border border-gray-300" style={{
+                            background: '#FFFFFF'
                           }}>
                             {[{id: 'buyer', label: 'Buyer', icon: Building2}, {id: 'farmer', label: 'Farmer', icon: Leaf}].map((type) => (
                               <button
@@ -659,7 +1019,7 @@ export default function LoginPage() {
                                 onClick={() => setUserType(type.id)}
                                 className={`flex-1 py-2 px-4 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                                   userType === type.id
-                                    ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg'
+                                    ? 'bg-[#228B22] text-white shadow-lg'
                                     : 'text-gray-500 hover:text-gray-700'
                                 }`}
                               >
@@ -680,10 +1040,9 @@ export default function LoginPage() {
                               value={signupForm.name}
                               onChange={(e) => setSignupForm({...signupForm, name: e.target.value})}
                               required
-                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all"
+                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
                               style={{
-                                background: '#e0e5ec',
-                                boxShadow: 'inset 5px 5px 10px #bec3c9, inset -5px -5px 10px #ffffff'
+                                background: '#FFFFFF'
                               }}
                             />
                           </div>
@@ -704,10 +1063,9 @@ export default function LoginPage() {
                             : setLoginForm({...loginForm, email: e.target.value})
                           }
                           required
-                          className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all"
+                          className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
                           style={{
-                            background: '#e0e5ec',
-                            boxShadow: 'inset 5px 5px 10px #bec3c9, inset -5px -5px 10px #ffffff'
+                            background: '#FFFFFF'
                           }}
                         />
                       </div>
@@ -726,10 +1084,9 @@ export default function LoginPage() {
                             : setLoginForm({...loginForm, password: e.target.value})
                           }
                           required
-                          className="w-full pl-12 pr-12 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all"
+                          className="w-full pl-12 pr-12 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
                           style={{
-                            background: '#e0e5ec',
-                            boxShadow: 'inset 5px 5px 10px #bec3c9, inset -5px -5px 10px #ffffff'
+                            background: '#FFFFFF'
                           }}
                         />
                         <button
@@ -754,10 +1111,9 @@ export default function LoginPage() {
                               value={signupForm.confirmPassword}
                               onChange={(e) => setSignupForm({...signupForm, confirmPassword: e.target.value})}
                               required
-                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all"
+                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
                               style={{
-                                background: '#e0e5ec',
-                                boxShadow: 'inset 5px 5px 10px #bec3c9, inset -5px -5px 10px #ffffff'
+                                background: '#FFFFFF'
                               }}
                             />
                           </div>
@@ -772,10 +1128,9 @@ export default function LoginPage() {
                               placeholder="Phone Number"
                               value={signupForm.phone}
                               onChange={(e) => setSignupForm({...signupForm, phone: e.target.value})}
-                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all"
+                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
                               style={{
-                                background: '#e0e5ec',
-                                boxShadow: 'inset 5px 5px 10px #bec3c9, inset -5px -5px 10px #ffffff'
+                                background: '#FFFFFF'
                               }}
                             />
                           </div>
@@ -790,10 +1145,9 @@ export default function LoginPage() {
                               placeholder="Location (City/District)"
                               value={signupForm.location}
                               onChange={(e) => setSignupForm({...signupForm, location: e.target.value})}
-                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all"
+                              className="w-full pl-12 pr-4 py-3 rounded-full bg-transparent text-gray-700 placeholder-gray-400 outline-none transition-all border border-gray-300"
                               style={{
-                                background: '#e0e5ec',
-                                boxShadow: 'inset 5px 5px 10px #bec3c9, inset -5px -5px 10px #ffffff'
+                                background: '#FFFFFF'
                               }}
                             />
                           </div>
@@ -802,7 +1156,7 @@ export default function LoginPage() {
 
                       {!isSignUp && (
                         <div className="text-right">
-                          <button type="button" className="text-sm text-teal-600 hover:text-teal-700">
+                          <button type="button" className="text-sm text-[#228B22] hover:text-[#228B22]/80">
                             Forgot password?
                           </button>
                         </div>
@@ -812,10 +1166,9 @@ export default function LoginPage() {
                       <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-3 rounded-full font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-full font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2 hover:opacity-90"
                         style={{
-                          background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #2dd4bf 100%)',
-                          boxShadow: '5px 5px 10px #bec3c9, -5px -5px 10px #ffffff'
+                          background: '#228B22'
                         }}
                       >
                         {isLoading ? (
@@ -828,49 +1181,41 @@ export default function LoginPage() {
                         )}
                       </button>
                     </form>
-
-                    {/* Demo Login Buttons */}
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                      <p className="text-xs text-gray-400 text-center mb-3">Quick Demo Access</p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleDemoLogin('buyer')}
-                          className="flex-1 py-2 px-3 text-xs font-medium text-gray-600 rounded-lg transition-all hover:bg-gray-100"
-                          style={{
-                            background: '#e0e5ec',
-                            boxShadow: '3px 3px 6px #bec3c9, -3px -3px 6px #ffffff'
-                          }}
-                        >
-                          Demo Buyer
-                        </button>
-                        <button
-                          onClick={() => handleDemoLogin('farmer')}
-                          className="flex-1 py-2 px-3 text-xs font-medium text-gray-600 rounded-lg transition-all hover:bg-gray-100"
-                          style={{
-                            background: '#e0e5ec',
-                            boxShadow: '3px 3px 6px #bec3c9, -3px -3px 6px #ffffff'
-                          }}
-                        >
-                          Demo Farmer
-                        </button>
-                        <button
-                          onClick={() => handleDemoLogin('admin')}
-                          className="flex-1 py-2 px-3 text-xs font-medium text-gray-600 rounded-lg transition-all hover:bg-gray-100"
-                          style={{
-                            background: '#e0e5ec',
-                            boxShadow: '3px 3px 6px #bec3c9, -3px -3px 6px #ffffff'
-                          }}
-                        >
-                          Demo Admin
-                        </button>
+                    )}                    {/* Demo Role Access */}
+                    {!isSignUp && (
+                      <div className="mt-8 pt-6 border-t border-gray-100">
+                        <p className="text-center text-xs text-gray-400 mb-4 font-medium uppercase tracking-wider">Quick Demo Access</p>
+                        <div className="flex justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleDemoLogin('buyer')}
+                            className="flex-1 px-3 py-2 rounded-xl text-[10px] font-bold bg-[#f8fafc] text-blue-600 border border-blue-100 hover:bg-blue-50 transition-all"
+                          >
+                            Retailer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDemoLogin('farmer')}
+                            className="flex-1 px-3 py-2 rounded-xl text-[10px] font-bold bg-[#fdfaf6] text-orange-600 border border-orange-100 hover:bg-orange-50 transition-all"
+                          >
+                            Farmer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDemoLogin('agent')}
+                            className="flex-1 px-3 py-2 rounded-xl text-[10px] font-bold bg-[#f5fcf8] text-emerald-600 border border-emerald-100 hover:bg-emerald-50 transition-all"
+                          >
+                            Agent
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Mobile Toggle */}
                     <div className="md:hidden mt-6 text-center">
                       <button
                         onClick={() => setIsSignUp(!isSignUp)}
-                        className="text-teal-600 font-medium"
+                        className="text-[#264941] font-medium"
                       >
                         {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
                       </button>
@@ -889,8 +1234,8 @@ export default function LoginPage() {
           transition={{ delay: 0.5 }}
           className="mt-6 text-center"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 backdrop-blur-sm text-sm text-gray-600">
-            <Fingerprint className="h-4 w-4 text-teal-500" />
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white backdrop-blur-sm text-sm text-gray-600 border border-gray-300">
+            <Fingerprint className="h-4 w-4 text-[#228B22]" />
             <span>Self-Sovereign Identity powered by Polygon blockchain</span>
           </div>
         </motion.div>

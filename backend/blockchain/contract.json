@@ -69,6 +69,11 @@
           "type": "address"
         },
         {
+          "internalType": "address payable",
+          "name": "buyer",
+          "type": "address"
+        },
+        {
           "internalType": "bool",
           "name": "deliveryConfirmed",
           "type": "bool"
@@ -80,6 +85,32 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "orderId",
+          "type": "uint256"
+        }
+      ],
+      "name": "penalizeBuyer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "orderId",
+          "type": "uint256"
+        }
+      ],
+      "name": "penalizeFarmer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {

@@ -77,7 +77,6 @@ router.post('/approve', verifySecret, async (req, res) => {
       txHash: onChainRes.txHash,
       splits: offChainRes.success ? {
         farmer: offChainRes.farmerAmount,
-        transporter: offChainRes.transporterAmount,
         platform: offChainRes.platformAmount
       } : null
     });

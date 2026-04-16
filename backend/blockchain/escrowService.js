@@ -115,12 +115,13 @@ async function getOrderStatus(orderId) {
     return { 
       success: true, 
       data: {
+        amount: ethers.formatEther(order[0]), // order.totalAmount
         farmer: order[1], // order.farmer
         transporter: order[2], // order.transporter
-        amount: ethers.formatEther(order[0]), // order.totalAmount
-        deliveryConfirmed: order[3],
-        escrowReleased: order[4],
-        status: order[4] ? "COMPLETE" : (order[3] ? "AWAITING_RELEASE" : "LOCKED")
+        buyer: order[3], // order.buyer
+        deliveryConfirmed: order[4],
+        escrowReleased: order[5],
+        status: order[5] ? "COMPLETE" : (order[4] ? "AWAITING_RELEASE" : "LOCKED")
       }
     };
   } catch (error) {

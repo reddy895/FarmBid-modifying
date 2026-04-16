@@ -23,7 +23,7 @@ async function ensureWalletExists(userId, role, defaultBalance = 0) {
 }
 
 /**
- * Releases the escrow off-chain by splitting the totalValue between the Farmer (85%), Transporter (10%), and Platform (5%).
+ * Releases the escrow off-chain by splitting the totalValue between the Farmer (95%) and the Platform (5%).
  * 
  * @param {String} orderId - The Auction/Order ID
  */
@@ -51,7 +51,6 @@ async function releaseEscrow(orderId) {
     
     // Fallback pseudo-IDs if they aren't explicitly registered
     const farmerId = auction.farmerId.toString();
-    const transporterId = delivery && delivery.deliveryAgentPhone ? `T-${delivery.deliveryAgentPhone}` : 'T-DEFAULT-AGENT';
     const platformAdminId = 'PLATFORM_ADMIN_VAULT';
 
     const totalValue = auction.totalValue || 0;
@@ -59,14 +58,12 @@ async function releaseEscrow(orderId) {
       throw new Error('Total value for escrow splitting is invalid or zero.');
     }
 
-    // 3. Split amounts
-    const farmerAmount = (totalValue * 85) / 100;
-    const transporterAmount = (totalValue * 10) / 100;
-    const platformAmount = totalValue - farmerAmount - transporterAmount; // Covers precision gaps for 5%
+    // 3. Split amounts (95% Farmer, 5% Platform)
+    const farmerAmount = (totalValue * 95) / 100;
+    const platformAmount = totalValue - farmerAmount; // Covers precision gaps for 5%
 
     // 4. Ensure Wallets exist
     const farmerWallet = await ensureWalletExists(farmerId, 'farmer');
-    const transporterWallet = await ensureWalletExists(transporterId, 'transporter');
     const platformWallet = await ensureWalletExists(platformAdminId, 'admin');
 
     // 5. Build Transactions
@@ -85,29 +82,12 @@ async function releaseEscrow(orderId) {
       amount: farmerAmount,
       balanceBefore: farmerBefore,
       balanceAfter: farmerWallet.balance,
-      description: `Escrow Release: 85% share for order ${orderId}`,
+      description: `Escrow Release: 95% revenue share for order ${orderId}`,
       referenceId: orderId,
       referenceType: 'auction',
       status: 'success'
     }).save());
 
-    // --- Transporter ---
-    const transportBefore = transporterWallet.balance;
-    transporterWallet.balance += transporterAmount;
-    transporterWallet.availableBalance += transporterAmount;
-    updates.push(transporterWallet.save());
-    updates.push(new WalletTransaction({
-      walletId: transporterWallet._id,
-      userId: transporterId,
-      type: 'settlement',
-      amount: transporterAmount,
-      balanceBefore: transportBefore,
-      balanceAfter: transporterWallet.balance,
-      description: `Escrow Release: 10% transport fee for order ${orderId}`,
-      referenceId: orderId,
-      referenceType: 'auction',
-      status: 'success'
-    }).save());
 
     // --- Platform Fee ---
     const platformBefore = platformWallet.balance;
@@ -138,7 +118,6 @@ async function releaseEscrow(orderId) {
     return { 
       success: true, 
       farmerAmount, 
-      transporterAmount, 
       platformAmount 
     };
   } catch (error) {

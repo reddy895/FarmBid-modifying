@@ -25,6 +25,7 @@ contract SupplyChainEscrow is ReentrancyGuard {
         uint256 totalAmount;          
         address payable farmer;       
         address payable transporter;  
+        address payable buyer;
         bool deliveryConfirmed;       
         bool escrowReleased;          
     }
@@ -35,6 +36,11 @@ contract SupplyChainEscrow is ReentrancyGuard {
         platformOwner = _platformOwner;
     }
 
+    modifier onlyPlatform() {
+        require(msg.sender == platformOwner, "Escrow: Only platform can call this");
+        _;
+    }
+
     function lockFunds(uint256 orderId, address payable _farmer) external payable {
         require(msg.value > 0, "Escrow: Must send MATIC to lock");
         require(orders[orderId].totalAmount == 0, "Escrow: Order already exists");
@@ -43,12 +49,13 @@ contract SupplyChainEscrow is ReentrancyGuard {
             totalAmount: msg.value,
             farmer: _farmer,
             transporter: payable(address(0)), 
+            buyer: payable(msg.sender),
             deliveryConfirmed: false,
             escrowReleased: false
         });
     }
 
-    function approveRelease(uint256 orderId) external {
+    function approveRelease(uint256 orderId) external onlyPlatform {
         orders[orderId].deliveryConfirmed = true;
         this.releaseEscrow(orderId);
     }
@@ -61,7 +68,8 @@ contract SupplyChainEscrow is ReentrancyGuard {
 
         order.escrowReleased = true;
 
-        uint256 farmerShare = (order.totalAmount * 88) / 100;
+        // 85% Farmer, 10% Transporter, 5% Platform
+        uint256 farmerShare = (order.totalAmount * 85) / 100;
         uint256 transporterShare = (order.totalAmount * 10) / 100;
         uint256 platformShare = order.totalAmount - farmerShare - transporterShare;
         
@@ -77,5 +85,33 @@ contract SupplyChainEscrow is ReentrancyGuard {
 
         (bool platformSuccess, ) = platformOwner.call{value: platformShare}("");
         require(platformSuccess, "Escrow: Failed to send to platform owner");
+    }
+
+    function penalizeFarmer(uint256 orderId) external onlyPlatform nonReentrant {
+        Order storage order = orders[orderId];
+        require(order.totalAmount > 0 && !order.escrowReleased, "Escrow: Invalid order state");
+        
+        order.escrowReleased = true;
+        
+        // Full refund to buyer or platform owner to handle manually
+        (bool success, ) = order.buyer.call{value: order.totalAmount}("");
+        require(success, "Escrow: Refund failed");
+    }
+
+    function penalizeBuyer(uint256 orderId) external onlyPlatform nonReentrant {
+        Order storage order = orders[orderId];
+        require(order.totalAmount > 0 && !order.escrowReleased, "Escrow: Invalid order state");
+        
+        order.escrowReleased = true;
+        
+        // Split between Farmer (85%) and Platform (15%)
+        uint256 farmerShare = (order.totalAmount * 85) / 100;
+        uint256 platformShare = order.totalAmount - farmerShare;
+        
+        (bool fSuccess, ) = order.farmer.call{value: farmerShare}("");
+        require(fSuccess, "Escrow: Farmer compensation failed");
+        
+        (bool pSuccess, ) = platformOwner.call{value: platformShare}("");
+        require(pSuccess, "Escrow: Platform compensation failed");
     }
 }
