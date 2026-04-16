@@ -209,7 +209,9 @@ router.post('/', handleValidationErrors, listingValidation, async (req, res, nex
       qualityIndex,
       freshness,
       surfaceDamage,
-      colorUniformity
+      colorUniformity,
+      auctionEndsAt: requestedEndsAt,
+      farmerName: requestFarmerName,
     } = req.body;
 
     // Verify farmer exists
@@ -226,14 +228,16 @@ router.post('/', handleValidationErrors, listingValidation, async (req, res, nex
     if (qualityIndex >= 90) qualityGrade = 'Premium';
     else if (qualityIndex < 65) qualityGrade = 'At Risk';
 
-    // Calculate auction end time (24 hours from now)
-    const auctionEndsAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Use requested auction end time or default to 24 hours
+    const auctionEndsAt = requestedEndsAt
+      ? new Date(requestedEndsAt)
+      : new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     // Create listing
     const listing = new Listing({
       farmerId: farmer._id,
       farmerCode: farmer.code,
-      farmerName: farmer.name,
+      farmerName: requestFarmerName || farmer.name,
       farmerTrustScore: farmer.trustScore,
       produce,
       quantity,

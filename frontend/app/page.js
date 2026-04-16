@@ -42,44 +42,44 @@ import {
 const whatsappMessages = {
   english: [
     { type: 'bot', text: 'Welcome to FarmBid! Please select your language / ದಯವಿಟ್ಟು ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ / कृपया अपनी भाषा चुनें' },
-    { type: 'bot', text: 'Choose Language:', isInteractive: true, options: ['🌐 English', 'ಕನ್ನಡ (Kannada)', 'हिंदी (Hindi)'] },
+    { type: 'bot', text: 'Choose Language:', isInteractive: true, options: ['English', 'ಕನ್ನಡ (Kannada)', 'हिंदी (Hindi)'] },
     { type: 'user', text: 'English' },
     { type: 'bot', text: "Great! Let's create a new listing. What type of crop do you want to list?" },
-    { type: 'bot', text: 'Select Crop:', isInteractive: true, options: ['🍅 Tomatoes', '🧅 Onions', '🌾 Wheat'] },
-    { type: 'user', text: '🍅 Tomatoes' },
+    { type: 'bot', text: 'Select Crop:', isInteractive: true, options: ['Tomatoes', 'Onions', 'Wheat'] },
+    { type: 'user', text: 'Tomatoes' },
     { type: 'bot', text: 'Tomatoes selected.\n\nPlease enter your Base Price (minimum expected price) per kg.\n(Type the amount)' },
     { type: 'user', text: '₹32' },
-    { type: 'bot', text: 'Summary:\n\n🍅 Crop: Tomatoes\n💰 Base Price: ₹32/kg\n\nConfirm listing?' },
-    { type: 'bot', text: 'Confirm:', isInteractive: true, options: ['✅ Yes, list it', '❌ Cancel'] },
-    { type: 'user', text: '✅ Yes, list it' },
+    { type: 'bot', text: 'Summary:\n\nCrop: Tomatoes\nBase Price: ₹32/kg\n\nConfirm listing?' },
+    { type: 'bot', text: 'Confirm:', isInteractive: true, options: ['Yes, list it', 'Cancel'] },
+    { type: 'user', text: 'Yes, list it' },
     { type: 'bot', text: 'Listing is LIVE!\n\nAuction ID: #KOL-2025\nEnds in: 24 hours\n\nYou will receive updates when buyers bid.' }
   ],
   hindi: [
     { type: 'bot', text: 'Welcome to FarmBid! Please select your language / ದಯವಿಟ್ಟು ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ / कृपया अपनी भाषा चुनें' },
-    { type: 'bot', text: 'Choose Language:', isInteractive: true, options: ['English', 'ಕನ್ನಡ (Kannada)', '🌐 हिंदी (Hindi)'] },
+    { type: 'bot', text: 'Choose Language:', isInteractive: true, options: ['English', 'ಕನ್ನಡ (Kannada)', 'हिंदी (Hindi)'] },
     { type: 'user', text: 'हिंदी (Hindi)' },
     { type: 'bot', text: "बढ़िया! आइए एक नई लिस्टिंग बनाएं। आप किस प्रकार की फसल बेचना चाहते हैं?" },
-    { type: 'bot', text: 'फसल चुनें:', isInteractive: true, options: ['🍅 टमाटर', '🧅 प्याज', '🌾 गेहूं'] },
-    { type: 'user', text: '🍅 टमाटर' },
+    { type: 'bot', text: 'फसल चुनें:', isInteractive: true, options: ['टमाटर', 'प्याज', 'गेहूं'] },
+    { type: 'user', text: 'टमाटर' },
     { type: 'bot', text: 'टमाटर चुना गया।\n\nकृपया अपना आधार मूल्य (न्यूनतम अपेक्षित मूल्य) प्रति किलो दर्ज करें।\n(राशि टाइप करें)' },
     { type: 'user', text: '₹32' },
-    { type: 'bot', text: 'सारांश:\n\n🍅 फसल: टमाटर\n💰 आधार मूल्य: ₹32/kg\n\nक्या आप लिस्टिंग की पुष्टि करते हैं?' },
-    { type: 'bot', text: 'पुष्टि करें:', isInteractive: true, options: ['✅ हाँ, लिस्ट करें', '❌ रद्द करें'] },
-    { type: 'user', text: '✅ हाँ, लिस्ट करें' },
+    { type: 'bot', text: 'सारांश:\n\nफसल: टमाटर\nआधार मूल्य: ₹32/kg\n\nक्या आप लिस्टिंग की पुष्टि करते हैं?' },
+    { type: 'bot', text: 'पुष्टि करें:', isInteractive: true, options: ['हाँ, लिस्ट करें', 'रद्द करें'] },
+    { type: 'user', text: 'हाँ, लिस्ट करें' },
     { type: 'bot', text: 'लिस्टिंग लाइव है!\n\nनीलामी ID: #KOL-2025\n24 घंटे में समाप्त\n\nखरीदारों के बोली लगाने पर आपको अपडेट मिलेंगे।' }
   ],
   kannada: [
     { type: 'bot', text: 'Welcome to FarmBid! Please select your language / ದಯವಿಟ್ಟು ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಿ / कृपया अपनी भाषा चुनें' },
-    { type: 'bot', text: 'Choose Language:', isInteractive: true, options: ['English', '🌐 ಕನ್ನಡ (Kannada)', 'हिंदी (Hindi)'] },
+    { type: 'bot', text: 'Choose Language:', isInteractive: true, options: ['English', 'ಕನ್ನಡ (Kannada)', 'हिंदी (Hindi)'] },
     { type: 'user', text: 'ಕನ್ನಡ (Kannada)' },
     { type: 'bot', text: "ಉತ್ತಮ! ಹೊಸ ಪಟ್ಟಿಯನ್ನು ರಚಿಸೋಣ. ನೀವು ಯಾವ ರೀತಿಯ ಬೆಳೆಯನ್ನು ಮಾರಾಟ ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?" },
-    { type: 'bot', text: 'ಬೆಳೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ:', isInteractive: true, options: ['🍅 ಟೊಮ್ಯಾಟೊ', '🧅 ಈರುಳ್ಳಿ', '🌾 ಗೋಧಿ'] },
-    { type: 'user', text: '🍅 ಟೊಮ್ಯಾಟೊ' },
+    { type: 'bot', text: 'ಬೆಳೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ:', isInteractive: true, options: ['ಟೊಮ್ಯಾಟೊ', 'ಈರುಳ್ಳಿ', 'ಗೋಧಿ'] },
+    { type: 'user', text: 'ಟೊಮ್ಯಾಟೊ' },
     { type: 'bot', text: 'ಟೊಮ್ಯಾಟೊ ಆಯ್ಕೆ ಮಾಡಲಾಗಿದೆ.\n\nದಯವಿಟ್ಟು ನಿಮ್ಮ ಮೂಲ ಬೆಲೆಯನ್ನು (ಕನಿಷ್ಠ ನಿರೀಕ್ಷಿತ ಬೆಲೆ) ಪ್ರತಿ ಕೆಜಿಗೆ ನಮೂದಿಸಿ.\n(ಮೊತ್ತವನ್ನು ಟೈಪ್ ಮಾಡಿ)' },
     { type: 'user', text: '₹32' },
-    { type: 'bot', text: 'ಸಾರಾಂಶ:\n\n🍅 ಬೆಳೆ: ಟೊಮ್ಯಾಟೊ\n💰 ಮೂಲ ಬೆಲೆ: ₹32/kg\n\nಪಟ್ಟಿಯನ್ನು ಖಚಿತಪಡಿಸುತ್ತೀರಾ?' },
-    { type: 'bot', text: 'ಖಚಿತಪಡಿಸಿ:', isInteractive: true, options: ['✅ ಹೌದು, ಪಟ್ಟಿ ಮಾಡಿ', '❌ ರದ್ದುಮಾಡಿ'] },
-    { type: 'user', text: '✅ ಹೌದು, ಪಟ್ಟಿ ಮಾಡಿ' },
+    { type: 'bot', text: 'ಸಾರಾಂಶ:\n\nಬೆಳೆ: ಟೊಮ್ಯಾಟೊ\nಮೂಲ ಬೆಲೆ: ₹32/kg\n\nಪಟ್ಟಿಯನ್ನು ಖಚಿತಪಡಿಸುತ್ತೀರಾ?' },
+    { type: 'bot', text: 'ಖಚಿತಪಡಿಸಿ:', isInteractive: true, options: ['ಹೌದು, ಪಟ್ಟಿ ಮಾಡಿ', 'ರದ್ದುಮಾಡಿ'] },
+    { type: 'user', text: 'ಹೌದು, ಪಟ್ಟಿ ಮಾಡಿ' },
     { type: 'bot', text: 'ಪಟ್ಟಿ ಸಕ್ರಿಯವಾಗಿದೆ!\n\nಹರಾಜು ID: #KOL-2025\n24 ಗಂಟೆಗಳಲ್ಲಿ ಕೊನೆಗೊಳ್ಳುತ್ತದೆ\n\nಖರೀದಿದಾರರು ಬಿಡ್ ಮಾಡಿದಾಗ ನಿಮಗೆ ಅಪ್ಡೇಟ್ ಸಿಗುತ್ತದೆ.' }
   ]
 }
@@ -234,7 +234,6 @@ const AuctionCard = ({ listing, onBid, onRelease }) => {
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <span>{listing.produceIcon || 'ðŸŒ¾'}</span>
                 {listing.produce || 'Farm Produce'}
               </CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1 text-sm">
@@ -306,7 +305,7 @@ const AuctionCard = ({ listing, onBid, onRelease }) => {
           {listing.status === 'won' || listing.status === 'ended' ? (
             <Button className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20" onClick={() => onRelease && onRelease(listing.id || listing._id)}>
               <PackageCheck className="h-4 w-4 mr-2" />
-              Confirm Delivery ✅
+              Confirm Delivery
             </Button>
           ) : (
             <Button className="w-full" onClick={() => onBid(listing)}>
@@ -577,7 +576,6 @@ const BidDialog = ({ listing, isOpen, onClose, onSubmit }) => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span>{listing.produceIcon}</span>
             Place Bid - {listing.produce}
           </DialogTitle>
           <DialogDescription>From {listing.farmerName} ({listing.farmerCode})</DialogDescription>
@@ -685,36 +683,34 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
         body: JSON.stringify({ amount })
       });
       const data = await res.json();
+      console.log('Razorpay Order Created:', data);
       if (!data.success) {
         setIsVerifying(false);
         console.error('Razorpay initiation failed:', data);
         return toast.error(`Initiation failed: ${data.message || data.error || 'Server error'}`);
       }
 
+      if (window.Razorpay) {
+        openCheckout();
+        return;
+      }
+
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
-      script.onload = () => {
+      script.onload = openCheckout;
+      document.body.appendChild(script);
+
+      function openCheckout() {
+        onClose(); // Close the shadcn Dialog to prevent focus trap blocking Razorpay
+        console.log('Opening Razorpay Checkout for Order:', data.orderId);
         const rzp = new window.Razorpay({
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SdxN7CqrUoaRHi',
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SZlp7uSKnjrnRE',
           amount: amount * 100,
           currency: 'INR',
           name: 'FarmBid',
           description: `Wallet Top-up: ₹${amount}`,
           order_id: data.orderId,
-          // Explicitly command Razorpay interface to prioritize and render the UPI QR Flow 
-          config: {
-            display: {
-              blocks: {
-                qr: {
-                  name: 'Scan QR to Pay',
-                  instruments: [{ method: 'upi', flows: ['qr'] }]
-                }
-              },
-              sequence: ['block.qr'],
-              preferences: { show_default_blocks: true }
-            }
-          },
           handler: async (resp) => {
             try {
               const token = localStorage.getItem('farmbid_token');
@@ -751,7 +747,6 @@ const PaymentDialog = ({ isOpen, onClose, amount, onConfirm, userId, userPhone, 
             contact: contactNum,
             email: emailAddr
           },
-          readonly: { contact: true, email: true, name: true },
           theme: { color: '#16a34a' }
         });
         rzp.open();
@@ -1100,7 +1095,6 @@ export default function App() {
     const fetchData = async () => {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-<<<<<<< HEAD
         const [listingsRes, eventsRes] = await Promise.all([
           fetch(`${API_URL}/listings?status=all`),
           fetch(`${API_URL}/blockchain/events`)
@@ -1118,27 +1112,6 @@ export default function App() {
           }
         } else {
           setWalletBalance(0)
-=======
-        const [listingsRes, eventsRes, statsRes] = await Promise.all([
-          fetch(`${API_URL}/listings?status=all`),
-          fetch(`${API_URL}/blockchain/events`),
-          fetch(`${API_URL}/stats/buyer/${currentUser?.id || 'demo_id'}`)
-        ])
-        const listingsData = await listingsRes.json()
-        const eventsData = await eventsRes.json()
-        const statsData = await statsRes.json()
-        
-        setListings(listingsData.listings || [])
-        setBlockchainEvents(eventsData.events || [])
-        
-        if (statsData.success) {
-          setWalletBalance(statsData.stats.walletBalance || 0)
-          setDashboardStats({
-            activeBids: statsData.stats.activeBids || 0,
-            wonAuctions: statsData.stats.wonAuctions || 0,
-            totalSaved: statsData.stats.totalSaved || 0
-          })
->>>>>>> 59bea7c68a2acc78c12faa5c1524d3b87f6fb904
         }
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -1510,7 +1483,7 @@ export default function App() {
               <Separator className="my-3" />
 
               <p className={`px-3 py-2 text-xs font-semibold text-muted-foreground uppercase ${!sidebarOpen && 'hidden'}`}>
-                Demo Modes
+                Platform Features
               </p>
               <NavItem icon={Sparkles} label="Quality Lab" view="quality" />
               <NavItem icon={Link2} label="Blockchain Ledger" view="blockchain" />
@@ -1521,7 +1494,7 @@ export default function App() {
                 Admin
               </p>
               <NavItem icon={BarChart3} label="Admin Dashboard" view="admin" />
-              <NavItem icon={Users} label="Farmers" view="farmers" />
+              <NavItem icon={Users} label="Agents" view="farmers" />
               <NavItem icon={AlertTriangle} label="Fraud Monitor" view="fraud" />
             </nav>
           </aside>
@@ -1547,7 +1520,7 @@ export default function App() {
                             Welcome{currentUser ? `, ${currentUser.name?.split(' ')[0]}` : ''}!
                           </h1>
                           <p className="text-muted-foreground max-w-lg">
-                            Farmers set the floor. Buyers bid upward. Every transaction anchored to blockchain.
+                            Direct from source. Buyers bid upward. Every transaction anchored to blockchain.
                           </p>
                           {currentUser?.did && (
                             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full w-fit">
@@ -1632,7 +1605,7 @@ export default function App() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h1 className="text-2xl font-bold">Live Auctions</h1>
-                      <p className="text-muted-foreground">Bid on fresh produce directly from Karnataka farmers</p>
+                      <p className="text-muted-foreground">Bid on fresh produce directly from verified sources</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -1946,7 +1919,7 @@ export default function App() {
                   {/* KPI Grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <KPICard title="Total GMV" value="₹0" icon={IndianRupee} trend="+0% this week" trendUp />
-                    <KPICard title="Active Farmers" value="0" icon={Users} trend="+0 this week" trendUp />
+                    <KPICard title="Active Agents" value="0" icon={Users} trend="+0 this week" trendUp />
                     <KPICard title="Active Auctions" value="0" icon={Gavel} />
                     <KPICard title="Success Rate" value="0%" icon={CheckCircle2} trend="+0%" trendUp />
                   </div>
@@ -1965,9 +1938,9 @@ export default function App() {
                     </CardHeader>
                     <CardContent>
                       <div className="overflow-x-auto text-center py-8">
-                        <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">ðŸ“Š</div>
+                        <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-20" />
                         <p className="text-muted-foreground font-medium">No activity to display</p>
-                        <p className="text-sm text-muted-foreground opacity-70">Farmer details will populate here once active.</p>
+                        <p className="text-sm text-muted-foreground opacity-70">Agent details will populate here once active.</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -1993,7 +1966,7 @@ export default function App() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3 text-center py-8">
-                          <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">âœ…</div>
+                          <CheckCircle2 className="h-10 w-10 mx-auto mb-3 text-green-500 opacity-20" />
                           <p className="text-muted-foreground font-medium">No actions required</p>
                           <p className="text-sm text-muted-foreground opacity-70">You have 0 disputes and 0 pending verifications.</p>
                         </div>
@@ -2172,16 +2145,16 @@ export default function App() {
                   exit={{ opacity: 0 }}
                   className="space-y-6"
                 >
-                  <h1 className="text-2xl font-bold">Registered Farmers</h1>
+                  <h1 className="text-2xl font-bold">Registered Agents</h1>
 
                   <Card>
                     <CardContent className="py-12">
                       <div className="text-center">
                         <Users className="h-12 w-12 text-muted-foreground opacity-20 mx-auto mb-3" />
-                        <h3 className="text-xl font-semibold mb-2">No Registered Farmers</h3>
+                        <h3 className="text-xl font-semibold mb-2">No Registered Agents</h3>
                         <p className="text-muted-foreground">
-                          There are currently no farmers registered on the platform. 
-                          Farmer profiles and details will appear here once they complete the onboarding process.
+                          There are currently no agents registered on the platform. 
+                          Agent profiles and details will appear here once they complete the onboarding process.
                         </p>
                       </div>
                     </CardContent>
@@ -2223,7 +2196,7 @@ export default function App() {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="text-center py-8">
-                          <div className="text-4xl mb-3 opacity-20 hover:opacity-40 transition-opacity">âœ…</div>
+                          <CheckCircle2 className="h-10 w-10 mx-auto mb-3 text-green-500 opacity-20" />
                           <p className="text-muted-foreground font-medium">No active alerts</p>
                           <p className="text-sm text-muted-foreground opacity-70">Fraud monitoring is active and clear.</p>
                         </div>
@@ -2281,7 +2254,6 @@ export default function App() {
           userId={currentUser?.id}
           userPhone={currentUser?.phone}
           userEmail={currentUser?.email}
-          initialPhase="scanner"
         />
       </div>
     </TooltipProvider>

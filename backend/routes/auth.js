@@ -102,7 +102,7 @@ router.post('/login', [
         userType: userType,
         email: user.email,
         name: user.name,
-    },
+      },
     );
 
     // Return user data (exclude password)
@@ -341,13 +341,8 @@ router.post('/demo-login', async (req, res) => {
           type: 'Retailer',
           location: 'Bengaluru',
           walletBalance: 0,
-<<<<<<< HEAD
-          totalBids: 156,
-          wonAuctions: 89,
-=======
           totalBids: 0,
           wonAuctions: 0,
->>>>>>> 59bea7c68a2acc78c12faa5c1524d3b87f6fb904
           trustScore: 98,
           joinedDate: '2024-07-01',
           gstNumber: 'GSTIN001',
@@ -366,36 +361,36 @@ router.post('/demo-login', async (req, res) => {
 
       userType = 'buyer';
 
-    } else if (role === 'farmer') {
-      // Get or create demo farmer
+    } else if (role === 'farmer' || role === 'agent') {
+      // Get or create demo farmer/agent
       const DEMO_FARMER_EMAIL = process.env.DEMO_FARMER_EMAIL || 'demo.farmer@farmbid.com';
       const DEMO_FARMER_PASSWORD = process.env.DEMO_FARMER_PASSWORD || 'demo123';
 
       user = await Farmer.findOne({ email: DEMO_FARMER_EMAIL });
 
       if (!user) {
-        // Create demo farmer with seed data (first seed farmer)
+        // Create demo farmer with clean data
         const demoFarmerData = {
-          code: 'KA-KOL-001',
-          name: 'Ramappa Gowda',
+          code: 'AG-UJ-001',
+          name: 'Ujwal',
           email: DEMO_FARMER_EMAIL,
-          phone: '+91 98765 43210',
-          village: 'Srinivaspur',
-          district: 'Kolar',
-          pincode: '563135',
-          landSize: '2.5 acres',
-          trustScore: 95,
-          totalListings: 47,
-          successfulSales: 45,
-          joinedDate: '2024-08-15',
+          phone: '+91 74112 37522',
+          village: 'Bengaluru',
+          district: 'Urban',
+          pincode: '560001',
+          landSize: 'N/A',
+          trustScore: 100,
+          totalListings: 0,
+          successfulSales: 0,
+          joinedDate: new Date().toISOString().split('T')[0],
           aadhaarVerified: true,
           upiVerified: true,
           landVerified: true,
-          language: 'Kannada',
-          crops: ['Tomatoes', 'Chilies', 'Onions'],
-          profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+          language: 'English',
+          crops: [],
+          profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
           isDemo: true,
-          role: 'farmer',
+          role: 'agent', 
           walletBalance: 0
         };
 
@@ -405,9 +400,18 @@ router.post('/demo-login', async (req, res) => {
 
         user = new Farmer(demoFarmerData);
         await user.save();
+      } else {
+        // Update existing demo user to be clean if it was previously "Ramappa Gowda"
+        user.name = 'Ujwal';
+        user.role = 'agent';
+        user.totalListings = 0;
+        user.successfulSales = 0;
+        user.crops = [];
+        await user.save();
       }
 
-      userType = 'farmer';
+      userType = 'farmer'; 
+// In backend logic, agent uses farmer model with 'agent' role
 
     } else if (role === 'admin') {
       // Get or create demo admin
@@ -706,48 +710,48 @@ router.post('/google-login', async (req, res) => {
     }
 
     if (!user) {
-       // Create a new user since they don't exist
-       userType = ['farmer'].includes(userRole.toLowerCase()) ? 'farmer' : 'buyer';
-       
-       if (userType === 'buyer') {
-         const buyerCount = await Buyer.countDocuments();
-         user = new Buyer({
-            code: `B${String(buyerCount + 1).padStart(3, '0')}`,
-            name,
-            email,
-            phone: `G-${googleId}`,
-            password: crypto.randomBytes(16).toString('hex'),
-            profileImage: picture,
-            type: 'Individual',
-            location: 'Not specified',
-            role: 'buyer',
-            joinedDate: new Date().toISOString().split('T')[0],
-            walletBalance: 0,
-            trustScore: 80,
-            isDemo: false
-         });
-       } else {
-         const farmerCount = await Farmer.countDocuments();
-         user = new Farmer({
-            code: `KA-XX-${String(farmerCount + 1).padStart(3, '0')}`,
-            name,
-            email,
-            phone: `G-${googleId}`,
-            password: crypto.randomBytes(16).toString('hex'),
-            profileImage: picture,
-            village: 'Unknown',
-            district: 'Unknown',
-            pincode: '000000',
-            landSize: '0 acres',
-            role: 'farmer',
-            joinedDate: new Date().toISOString().split('T')[0],
-            trustScore: 50,
-            crops: [],
-            walletBalance: 0,
-            isDemo: false
-         });
-       }
-       await user.save();
+      // Create a new user since they don't exist
+      userType = ['farmer'].includes(userRole.toLowerCase()) ? 'farmer' : 'buyer';
+
+      if (userType === 'buyer') {
+        const buyerCount = await Buyer.countDocuments();
+        user = new Buyer({
+          code: `B${String(buyerCount + 1).padStart(3, '0')}`,
+          name,
+          email,
+          phone: `G-${googleId}`,
+          password: crypto.randomBytes(16).toString('hex'),
+          profileImage: picture,
+          type: 'Individual',
+          location: 'Not specified',
+          role: 'buyer',
+          joinedDate: new Date().toISOString().split('T')[0],
+          walletBalance: 0,
+          trustScore: 80,
+          isDemo: false
+        });
+      } else {
+        const farmerCount = await Farmer.countDocuments();
+        user = new Farmer({
+          code: `KA-XX-${String(farmerCount + 1).padStart(3, '0')}`,
+          name,
+          email,
+          phone: `G-${googleId}`,
+          password: crypto.randomBytes(16).toString('hex'),
+          profileImage: picture,
+          village: 'Unknown',
+          district: 'Unknown',
+          pincode: '000000',
+          landSize: '0 acres',
+          role: 'farmer',
+          joinedDate: new Date().toISOString().split('T')[0],
+          trustScore: 50,
+          crops: [],
+          walletBalance: 0,
+          isDemo: false
+        });
+      }
+      await user.save();
     } else {
       // Update missing Google Info if they just logged in differently
       if (!user.profileImage && picture) {
@@ -819,9 +823,9 @@ router.post('/facebook-login', async (req, res) => {
 
     // Verify Facebook Access Token by fetching user profile
     const userInfoRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${token}`);
-    
+
     if (!userInfoRes.ok) {
-       return res.status(401).json({ success: false, error: 'Invalid Facebook access token' });
+      return res.status(401).json({ success: false, error: 'Invalid Facebook access token' });
     }
 
     const payload = await userInfoRes.json();
@@ -844,48 +848,48 @@ router.post('/facebook-login', async (req, res) => {
     }
 
     if (!user) {
-       // Create a new user since they don't exist
-       userType = ['farmer'].includes(userRole.toLowerCase()) ? 'farmer' : 'buyer';
-       
-       if (userType === 'buyer') {
-         const buyerCount = await Buyer.countDocuments();
-         user = new Buyer({
-            code: `B${String(buyerCount + 1).padStart(3, '0')}`,
-            name,
-            email,
-            phone: `FB-${facebookId}`,
-            password: crypto.randomBytes(16).toString('hex'),
-            profileImage: profilePicture,
-            type: 'Individual',
-            location: 'Not specified',
-            role: 'buyer',
-            joinedDate: new Date().toISOString().split('T')[0],
-            walletBalance: 0,
-            trustScore: 80,
-            isDemo: false
-         });
-       } else {
-         const farmerCount = await Farmer.countDocuments();
-         user = new Farmer({
-            code: `KA-XX-${String(farmerCount + 1).padStart(3, '0')}`,
-            name,
-            email,
-            phone: `FB-${facebookId}`,
-            password: crypto.randomBytes(16).toString('hex'),
-            profileImage: profilePicture,
-            village: 'Unknown',
-            district: 'Unknown',
-            pincode: '000000',
-            landSize: '0 acres',
-            role: 'farmer',
-            joinedDate: new Date().toISOString().split('T')[0],
-            trustScore: 50,
-            crops: [],
-            walletBalance: 0,
-            isDemo: false
-         });
-       }
-       await user.save();
+      // Create a new user since they don't exist
+      userType = ['farmer'].includes(userRole.toLowerCase()) ? 'farmer' : 'buyer';
+
+      if (userType === 'buyer') {
+        const buyerCount = await Buyer.countDocuments();
+        user = new Buyer({
+          code: `B${String(buyerCount + 1).padStart(3, '0')}`,
+          name,
+          email,
+          phone: `FB-${facebookId}`,
+          password: crypto.randomBytes(16).toString('hex'),
+          profileImage: profilePicture,
+          type: 'Individual',
+          location: 'Not specified',
+          role: 'buyer',
+          joinedDate: new Date().toISOString().split('T')[0],
+          walletBalance: 0,
+          trustScore: 80,
+          isDemo: false
+        });
+      } else {
+        const farmerCount = await Farmer.countDocuments();
+        user = new Farmer({
+          code: `KA-XX-${String(farmerCount + 1).padStart(3, '0')}`,
+          name,
+          email,
+          phone: `FB-${facebookId}`,
+          password: crypto.randomBytes(16).toString('hex'),
+          profileImage: profilePicture,
+          village: 'Unknown',
+          district: 'Unknown',
+          pincode: '000000',
+          landSize: '0 acres',
+          role: 'farmer',
+          joinedDate: new Date().toISOString().split('T')[0],
+          trustScore: 50,
+          crops: [],
+          walletBalance: 0,
+          isDemo: false
+        });
+      }
+      await user.save();
     } else {
       // Update missing Facebook Info if they just logged in differently
       if (!user.profileImage && profilePicture) {
@@ -978,10 +982,10 @@ router.post('/send-otp', [
     // For signup, check if user already exists
     if (purpose === 'signup') {
       const phoneQuery = { $in: [normalizedPhoneWithPlus, normalizedPhone] };
-      const existingUser = userType === 'buyer' 
+      const existingUser = userType === 'buyer'
         ? await Buyer.findOne({ phone: phoneQuery })
         : await Farmer.findOne({ phone: phoneQuery });
-      
+
       if (existingUser) {
         return res.status(400).json({
           success: false,
@@ -1126,16 +1130,12 @@ router.post('/verify-otp', [
           role: 'buyer',
           joinedDate: new Date().toISOString().split('T')[0],
           walletBalance: 0,
-<<<<<<< HEAD
-          password: password ? await bcrypt.hash(password, await bcrypt.genSalt(10)) : await bcrypt.hash(crypto.randomBytes(16).toString('hex'), await bcrypt.genSalt(10))
-=======
           password: password ? await bcrypt.hash(password, await bcrypt.genSalt(10)) : undefined
->>>>>>> 59bea7c68a2acc78c12faa5c1524d3b87f6fb904
         });
       } else {
         const farmerCount = await Farmer.countDocuments();
-        const districtCode = extraData.district 
-          ? extraData.district.substring(0, 2).toUpperCase() 
+        const districtCode = extraData.district
+          ? extraData.district.substring(0, 2).toUpperCase()
           : 'XX';
 
         user = new Farmer({
@@ -1153,17 +1153,8 @@ router.post('/verify-otp', [
           joinedDate: new Date().toISOString().split('T')[0],
           trustScore: 50,
           crops: extraData.crops || [],
-<<<<<<< HEAD
-          aadhaarVerified: false,
-          upiVerified: false,
-          landVerified: false,
-          language: 'Kannada',
-          profileImage: '',
-          password: password ? await bcrypt.hash(password, await bcrypt.genSalt(10)) : await bcrypt.hash(crypto.randomBytes(16).toString('hex'), await bcrypt.genSalt(10))
-=======
           walletBalance: 0,
           password: password ? await bcrypt.hash(password, await bcrypt.genSalt(10)) : undefined
->>>>>>> 59bea7c68a2acc78c12faa5c1524d3b87f6fb904
         });
       }
 
@@ -1197,20 +1188,12 @@ router.post('/verify-otp', [
       code: user.code,
       name: user.name,
       email: user.email,
-<<<<<<< HEAD
-      phone: user.phone,
-      role: userType,
-      isDemo: false,
-      walletBalance: userType === 'buyer' ? (user.walletBalance ?? 0) : 0,
-      trustScore: userType === 'farmer' ? (user.trustScore || 50) : 80
-=======
       phone: user.phone || '',
       role: user.role || userType,
       isDemo: user.isDemo || false,
       walletBalance: user.walletBalance || 0,
       trustScore: user.trustScore || 80,
       profileImage: user.profileImage || null
->>>>>>> 59bea7c68a2acc78c12faa5c1524d3b87f6fb904
     };
 
     if (userType === 'farmer') {
@@ -1238,7 +1221,7 @@ router.post('/verify-otp', [
  */
 router.post('/verify-otp-cleanup', async (req, res) => {
   const { phone } = req.body;
-  if(phone) await OTP.deleteOne({ phoneNumber: phone.replace(/\D/g, '') });
+  if (phone) await OTP.deleteOne({ phoneNumber: phone.replace(/\D/g, '') });
   res.json({ success: true });
 });
 
@@ -1259,9 +1242,9 @@ router.post('/linkedin-login', async (req, res) => {
     const userInfoRes = await fetch('https://api.linkedin.com/v2/userinfo', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    
+
     if (!userInfoRes.ok) {
-       return res.status(401).json({ success: false, error: 'Invalid LinkedIn access token' });
+      return res.status(401).json({ success: false, error: 'Invalid LinkedIn access token' });
     }
 
     const payload = await userInfoRes.json();
@@ -1280,40 +1263,40 @@ router.post('/linkedin-login', async (req, res) => {
     }
 
     if (!user) {
-       userType = ['farmer'].includes(userRole.toLowerCase()) ? 'farmer' : 'buyer';
-       if (userType === 'buyer') {
-         const buyerCount = await Buyer.countDocuments();
-         user = new Buyer({
-            code: `B${String(buyerCount + 1).padStart(3, '0')}`,
-            name, email,
-            phone: `LI-${linkedinId}`,
-            password: crypto.randomBytes(16).toString('hex'),
-            profileImage: picture,
-            type: 'Individual',
-            location: 'Not specified',
-            role: 'buyer',
-            joinedDate: new Date().toISOString().split('T')[0],
-            walletBalance: 0,
-            trustScore: 80,
-            isDemo: false
-         });
-       } else {
-         const farmerCount = await Farmer.countDocuments();
-         user = new Farmer({
-            code: `KA-XX-${String(farmerCount + 1).padStart(3, '0')}`,
-            name, email,
-            phone: `LI-${linkedinId}`,
-            password: crypto.randomBytes(16).toString('hex'),
-            profileImage: picture,
-            village: 'Unknown', district: 'Unknown', pincode: '000000', landSize: '0 acres',
-            role: 'farmer',
-            joinedDate: new Date().toISOString().split('T')[0],
-            trustScore: 50, crops: [],
-            walletBalance: 0,
-            isDemo: false
-         });
-       }
-       await user.save();
+      userType = ['farmer'].includes(userRole.toLowerCase()) ? 'farmer' : 'buyer';
+      if (userType === 'buyer') {
+        const buyerCount = await Buyer.countDocuments();
+        user = new Buyer({
+          code: `B${String(buyerCount + 1).padStart(3, '0')}`,
+          name, email,
+          phone: `LI-${linkedinId}`,
+          password: crypto.randomBytes(16).toString('hex'),
+          profileImage: picture,
+          type: 'Individual',
+          location: 'Not specified',
+          role: 'buyer',
+          joinedDate: new Date().toISOString().split('T')[0],
+          walletBalance: 0,
+          trustScore: 80,
+          isDemo: false
+        });
+      } else {
+        const farmerCount = await Farmer.countDocuments();
+        user = new Farmer({
+          code: `KA-XX-${String(farmerCount + 1).padStart(3, '0')}`,
+          name, email,
+          phone: `LI-${linkedinId}`,
+          password: crypto.randomBytes(16).toString('hex'),
+          profileImage: picture,
+          village: 'Unknown', district: 'Unknown', pincode: '000000', landSize: '0 acres',
+          role: 'farmer',
+          joinedDate: new Date().toISOString().split('T')[0],
+          trustScore: 50, crops: [],
+          walletBalance: 0,
+          isDemo: false
+        });
+      }
+      await user.save();
     }
 
     const jwtToken = jwt.sign(
@@ -1359,33 +1342,7 @@ router.post('/resend-otp', [
     const { phone } = req.body;
     const result = await otpService.resendOTP(phone);
     if (result.success) {
-<<<<<<< HEAD
-      const normalizedPhone = phone.replace(/\D/g, '');
-      
-      // Store the new OTP in database for verification
-      await OTP.findOneAndUpdate(
-        { phoneNumber: normalizedPhone },
-        {
-          $set: {
-            phoneNumber: normalizedPhone,
-            otp: result.otp,
-            isVerified: false,
-            attempts: 0,
-            expiryTime: new Date(Date.now() + result.expiryMinutes * 60 * 1000),
-            updatedAt: new Date()
-          }
-        },
-        { upsert: true, new: true }
-      );
-
-      return res.json({
-        success: true,
-        message: result.message,
-        expiryMinutes: result.expiryMinutes
-      });
-=======
       return res.json({ success: true, message: result.message, expiryMinutes: result.expiryMinutes });
->>>>>>> 59bea7c68a2acc78c12faa5c1524d3b87f6fb904
     } else {
       return res.status(400).json({ success: false, error: result.message });
     }

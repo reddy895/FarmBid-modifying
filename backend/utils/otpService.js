@@ -75,14 +75,6 @@ const sendSMS = async (phoneNumber, message) => {
       normalizedPhone = normalizedPhone.substring(2);
     }
 
-<<<<<<< HEAD
-    await sendWhatsAppMessage({ to: normalizedPhone, body: message });
-
-    console.log(`[SMS] Sent to ${normalizedPhone}`);
-    return true;
-  } catch (error) {
-    console.error('[SMS] WhatsApp send error:', error.message);
-=======
     const response = await axios.get(FAST2SMS_BASE_URL, {
       params: {
         authorization: FAST2SMS_API_KEY,
@@ -107,7 +99,6 @@ const sendSMS = async (phoneNumber, message) => {
     } else {
       console.error('[SMS] Fast2SMS API error:', error.message);
     }
->>>>>>> 59bea7c68a2acc78c12faa5c1524d3b87f6fb904
     return false;
   }
 };
@@ -160,8 +151,8 @@ const verifyOTP = (phoneNumber, inputOTP) => {
   } else {
     storedData.attempts += 1;
     const remaining = storedData.maxAttempts - storedData.attempts;
-    return { 
-      valid: false, 
+    return {
+      valid: false,
       message: `Invalid OTP. ${remaining} attempts remaining.`,
       attemptsRemaining: remaining
     };
