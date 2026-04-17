@@ -33,6 +33,11 @@ const chatSessionSchema = new mongoose.Schema({
   currentFlow: {
     type: String,
     default: 'NONE'
+  },
+  lastSource: {
+    type: String,
+    enum: ['whatsapp', 'voice', 'unknown'],
+    default: 'unknown'
   }
 }, {
   timestamps: true

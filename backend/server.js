@@ -26,6 +26,7 @@ const ordersRouter = require('./routes/orders');
 const escrowRouter = require('./routes/escrow');
 const authRouter = require('./routes/auth');
 const statsRouter = require('./routes/stats');
+const voiceRouter = require('./routes/voice');
 
 // Initialize express app
 const app = express();
@@ -88,6 +89,7 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/escrow', escrowRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/voice', voiceRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
